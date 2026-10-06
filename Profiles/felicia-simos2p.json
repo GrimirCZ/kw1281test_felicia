@@ -1,0 +1,2101 @@
+{
+  "schemaVersion": 1,
+  "id": "felicia-simos2p",
+  "comment": "Felicia 1.3 MPI 50 kW, 1999, four injectors, A/C and immobilizer. Connection and wire-status details still need vehicle confirmation.",
+  "vehicle": {
+    "model": "Skoda Felicia hatchback",
+    "year": 1999,
+    "engine": "1.3 MPI Simos 2P",
+    "powerKw": 50,
+    "injectors": 4,
+    "equipment": {
+      "ac": true,
+      "immobilizer": true,
+      "abs": false,
+      "powerSteering": false,
+      "centralLocking": false
+    }
+  },
+  "settings": {
+    "baudRate": 10400,
+    "fieldComments": {
+      "baudRate": "Default connection rate. Override it with a numeric CLI rate or KW1281TEST_BAUD_RATE if needed."
+    }
+  },
+  "units": [
+    {
+      "address": "0x01",
+      "aliases": [
+        "ecu",
+        "engine"
+      ],
+      "present": true,
+      "measurements": {
+        "engine": {
+          "rpm": {
+            "label": "Engine speed",
+            "readFrom": {
+              "group": 5,
+              "position": 1
+            },
+            "includeInSensors": true,
+            "unit": "rpm"
+          },
+          "temp": {
+            "label": "Coolant temperature",
+            "readFrom": {
+              "group": 5,
+              "position": 3
+            },
+            "includeInSensors": true,
+            "unit": "°C"
+          },
+          "conditions": {
+            "label": "Adjustment conditions",
+            "readFrom": {
+              "group": 1,
+              "position": 4
+            },
+            "includeInSensors": true,
+            "comment": "Raw status word for compressor, idle switch, lambda and temperature conditions. The bit layout still needs testing."
+          },
+          "state": {
+            "label": "Engine operating state",
+            "readFrom": {
+              "group": 2,
+              "position": 4
+            },
+            "includeInSensors": true,
+            "comment": "Raw status word: deceleration, idle, partial load and full load. Exact bit-to-wire layout needs confirmation."
+          },
+          "idle": {
+            "targetRpm": {
+              "label": "Target idle speed",
+              "readFrom": {
+                "group": 8,
+                "position": 2
+              },
+              "includeInSensors": true,
+              "unit": "rpm"
+            },
+            "correction": {
+              "label": "Idle regulation",
+              "readFrom": {
+                "group": 8,
+                "position": 3
+              },
+              "includeInSensors": true,
+              "unit": "%"
+            }
+          }
+        },
+        "electrical": {
+          "voltage": {
+            "label": "Battery voltage",
+            "readFrom": {
+              "group": 5,
+              "position": 2
+            },
+            "includeInSensors": true,
+            "unit": "V"
+          }
+        },
+        "intake": {
+          "temp": {
+            "label": "Intake air temperature",
+            "readFrom": {
+              "group": 5,
+              "position": 4
+            },
+            "includeInSensors": true,
+            "unit": "°C"
+          },
+          "pressure": {
+            "label": "Intake manifold absolute pressure",
+            "readFrom": {
+              "group": 0,
+              "position": 4
+            },
+            "includeInSensors": true,
+            "unit": "raw",
+            "comment": "Raw value from group 000. Conversion to physical pressure still needs testing."
+          },
+          "throttle": {
+            "angle": {
+              "label": "Throttle angle",
+              "readFrom": {
+                "group": 3,
+                "position": 3
+              },
+              "includeInSensors": true,
+              "unit": "degrees"
+            },
+            "duty": {
+              "label": "Throttle positioner duty cycle",
+              "readFrom": {
+                "group": 3,
+                "position": 4
+              },
+              "includeInSensors": true,
+              "unit": "%"
+            },
+            "state": {
+              "label": "Throttle control unit status",
+              "readFrom": {
+                "group": 9,
+                "position": 2
+              },
+              "includeInSensors": true,
+              "comment": "Throttle control status includes adaptation errors, an unpowered drive, cancellation due to low voltage and the idle switch. The bit layout still needs testing."
+            },
+            "voltage": {
+              "label": "Throttle potentiometer voltage",
+              "readFrom": {
+                "group": 98,
+                "position": 1
+              },
+              "includeInSensors": true,
+              "unit": "V"
+            },
+            "positionerVoltage": {
+              "label": "Throttle positioner potentiometer voltage",
+              "readFrom": {
+                "group": 98,
+                "position": 2
+              },
+              "includeInSensors": true,
+              "unit": "V"
+            }
+          },
+          "altitudeCorrection": {
+            "label": "Altitude correction factor",
+            "readFrom": {
+              "group": 6,
+              "position": 4
+            },
+            "includeInSensors": true
+          }
+        },
+        "fuel": {
+          "injection": {
+            "duration": {
+              "label": "Injection duration",
+              "readFrom": {
+                "group": 4,
+                "position": 3
+              },
+              "includeInSensors": true,
+              "unit": "ms",
+              "comment": "One injection duration is reported for the engine. Separate durations for the four injectors are unavailable."
+            }
+          },
+          "lambda": {
+            "correction": {
+              "label": "Lambda regulation",
+              "readFrom": {
+                "group": 10,
+                "position": 1
+              },
+              "includeInSensors": true,
+              "unit": "%"
+            },
+            "voltage": {
+              "label": "Lambda sensor voltage",
+              "readFrom": {
+                "group": 1,
+                "position": 3
+              },
+              "includeInSensors": true,
+              "unit": "V"
+            },
+            "idleAdaptation": {
+              "label": "Idle lambda adaptation",
+              "readFrom": {
+                "group": 11,
+                "position": 2
+              },
+              "includeInSensors": true,
+              "unit": "ms"
+            },
+            "partialAdaptation": {
+              "label": "Partial-load lambda adaptation",
+              "readFrom": {
+                "group": 11,
+                "position": 3
+              },
+              "includeInSensors": true
+            },
+            "state": {
+              "label": "Lambda regulation status",
+              "readFrom": {
+                "group": 20,
+                "position": 4
+              },
+              "includeInSensors": true,
+              "comment": "Raw status word: fault stored, dynamic restriction, regulation limit, regulation active, sensor ready and mixture. Wire bit layout needs confirmation."
+            }
+          },
+          "evap": {
+            "duty": {
+              "label": "EVAP purge valve duty cycle",
+              "readFrom": {
+                "group": 10,
+                "position": 3
+              },
+              "includeInSensors": true,
+              "unit": "%"
+            },
+            "lambdaCorrection": {
+              "label": "Lambda correction with purge valve active",
+              "readFrom": {
+                "group": 10,
+                "position": 4
+              },
+              "includeInSensors": true,
+              "unit": "%"
+            },
+            "state": {
+              "label": "EVAP valve status",
+              "readFrom": {
+                "group": 11,
+                "position": 4
+              },
+              "includeInSensors": true,
+              "comment": "Raw status word. Decoding the active modes requires a verified bit layout."
+            }
+          }
+        },
+        "ignition": {
+          "knock": {
+            "retard14": {
+              "label": "Knock ignition retard: cylinder 1 or 4",
+              "readFrom": {
+                "group": 15,
+                "position": 3
+              },
+              "includeInSensors": true,
+              "unit": "degrees",
+              "comment": "Diagnostics cannot distinguish which cylinder in the pair is responsible."
+            },
+            "retard23": {
+              "label": "Knock ignition retard: cylinder 2 or 3",
+              "readFrom": {
+                "group": 15,
+                "position": 4
+              },
+              "includeInSensors": true,
+              "unit": "degrees",
+              "comment": "Diagnostics cannot distinguish which cylinder in the pair is responsible."
+            },
+            "signal14A": {
+              "label": "Knock sensor signal: cylinder 1 or 4, sample A",
+              "readFrom": {
+                "group": 17,
+                "position": 1
+              },
+              "includeInSensors": true,
+              "unit": "Vpp",
+              "comment": "The signal cannot be assigned to a single cylinder within the pair."
+            },
+            "signal23A": {
+              "label": "Knock sensor signal: cylinder 2 or 3, sample A",
+              "readFrom": {
+                "group": 17,
+                "position": 2
+              },
+              "includeInSensors": true,
+              "unit": "Vpp",
+              "comment": "The signal cannot be assigned to a single cylinder within the pair."
+            },
+            "signal14B": {
+              "label": "Knock sensor signal: cylinder 1 or 4, sample B",
+              "readFrom": {
+                "group": 17,
+                "position": 3
+              },
+              "includeInSensors": true,
+              "unit": "Vpp",
+              "comment": "The signal cannot be assigned to a single cylinder within the pair."
+            },
+            "signal23B": {
+              "label": "Knock sensor signal: cylinder 2 or 3, sample B",
+              "readFrom": {
+                "group": 17,
+                "position": 4
+              },
+              "includeInSensors": true,
+              "unit": "Vpp",
+              "comment": "The signal cannot be assigned to a single cylinder within the pair."
+            }
+          }
+        },
+        "ac": {
+          "request": {
+            "label": "A/C state",
+            "readFrom": {
+              "group": 19,
+              "position": 3
+            },
+            "includeInSensors": true,
+            "states": {
+              "0": "off",
+              "1": "on"
+            }
+          },
+          "compressor": {
+            "label": "A/C compressor state",
+            "readFrom": {
+              "group": 19,
+              "position": 4
+            },
+            "includeInSensors": true,
+            "states": {
+              "0": "off",
+              "1": "on"
+            }
+          }
+        },
+        "throttle": {
+          "calibration": {
+            "minimum": {
+              "label": "Minimum throttle-positioner position",
+              "readFrom": {
+                "group": 21,
+                "position": 2
+              },
+              "includeInSensors": true,
+              "unit": "%"
+            },
+            "emergency": {
+              "label": "Emergency throttle-positioner position",
+              "readFrom": {
+                "group": 21,
+                "position": 3
+              },
+              "includeInSensors": true,
+              "unit": "%"
+            },
+            "maximum": {
+              "label": "Maximum throttle-positioner position",
+              "readFrom": {
+                "group": 21,
+                "position": 4
+              },
+              "includeInSensors": true,
+              "unit": "%"
+            },
+            "throttleLowerVoltage": {
+              "label": "Throttle potentiometer voltage at lower limit",
+              "readFrom": {
+                "group": 97,
+                "position": 1
+              },
+              "includeInSensors": true,
+              "unit": "V"
+            },
+            "positionerLowerVoltage": {
+              "label": "Positioner potentiometer voltage at lower limit",
+              "readFrom": {
+                "group": 97,
+                "position": 2
+              },
+              "includeInSensors": true,
+              "unit": "V",
+              "comment": "The 5 V endpoint may be displayed as 0 V. Keep the displayed value."
+            },
+            "throttleUpperVoltage": {
+              "label": "Throttle potentiometer voltage at upper limit",
+              "readFrom": {
+                "group": 97,
+                "position": 3
+              },
+              "includeInSensors": true,
+              "unit": "V"
+            },
+            "positionerUpperVoltage": {
+              "label": "Positioner potentiometer voltage at upper limit",
+              "readFrom": {
+                "group": 97,
+                "position": 4
+              },
+              "includeInSensors": true,
+              "unit": "V"
+            }
+          },
+          "adaptationState": {
+            "label": "Throttle adaptation status",
+            "readFrom": {
+              "group": 98,
+              "position": 4
+            },
+            "includeInSensors": true,
+            "comment": "Raw two-position status word. Sensors only reads the value and does not start basic settings."
+          }
+        }
+      },
+      "groups": {
+        "0": [
+          {
+            "position": 1,
+            "measurement": "intake.temp"
+          },
+          {
+            "position": 2,
+            "measurement": "electrical.voltage"
+          },
+          {
+            "position": 3,
+            "measurement": "engine.temp"
+          },
+          {
+            "position": 4,
+            "measurement": "intake.pressure"
+          },
+          {
+            "position": 5,
+            "measurement": "fuel.lambda.voltage"
+          },
+          {
+            "position": 6,
+            "measurement": "fuel.lambda.idleAdaptation"
+          },
+          {
+            "position": 7,
+            "measurement": "fuel.lambda.state"
+          },
+          {
+            "position": 8,
+            "measurement": "intake.throttle.angle"
+          },
+          {
+            "position": 9,
+            "measurement": "fuel.injection.duration"
+          },
+          {
+            "position": 10,
+            "measurement": "engine.rpm"
+          }
+        ],
+        "1": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "measurement": "engine.temp"
+          },
+          {
+            "position": 3,
+            "measurement": "fuel.lambda.voltage"
+          },
+          {
+            "position": 4,
+            "measurement": "engine.conditions"
+          }
+        ],
+        "2": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "label": "Air mass",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          },
+          {
+            "position": 3,
+            "label": "Vehicle speed",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          },
+          {
+            "position": 4,
+            "measurement": "engine.state"
+          }
+        ],
+        "3": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "label": "Air mass",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          },
+          {
+            "position": 3,
+            "measurement": "intake.throttle.angle"
+          },
+          {
+            "position": 4,
+            "measurement": "intake.throttle.duty"
+          }
+        ],
+        "4": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "label": "Air mass",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          },
+          {
+            "position": 3,
+            "measurement": "fuel.injection.duration"
+          },
+          {
+            "position": 4,
+            "label": "Air consumption",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          }
+        ],
+        "5": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "measurement": "electrical.voltage"
+          },
+          {
+            "position": 3,
+            "measurement": "engine.temp"
+          },
+          {
+            "position": 4,
+            "measurement": "intake.temp"
+          }
+        ],
+        "6": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "label": "Air mass",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          },
+          {
+            "position": 3,
+            "measurement": "intake.throttle.angle"
+          },
+          {
+            "position": 4,
+            "measurement": "intake.altitudeCorrection"
+          }
+        ],
+        "7": [
+          {
+            "position": 1,
+            "measurement": "intake.throttle.angle"
+          },
+          {
+            "position": 2,
+            "label": "Unassigned value 2",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          },
+          {
+            "position": 3,
+            "label": "Unassigned value 3",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          },
+          {
+            "position": 4,
+            "measurement": "engine.state"
+          }
+        ],
+        "8": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "measurement": "engine.idle.targetRpm"
+          },
+          {
+            "position": 3,
+            "measurement": "engine.idle.correction"
+          },
+          {
+            "position": 4,
+            "label": "Air consumption",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          }
+        ],
+        "9": [
+          {
+            "position": 1,
+            "measurement": "engine.idle.correction"
+          },
+          {
+            "position": 2,
+            "measurement": "intake.throttle.state"
+          },
+          {
+            "position": 3,
+            "measurement": "engine.temp"
+          },
+          {
+            "position": 4,
+            "measurement": "engine.rpm"
+          }
+        ],
+        "10": [
+          {
+            "position": 1,
+            "measurement": "fuel.lambda.correction"
+          },
+          {
+            "position": 2,
+            "measurement": "fuel.lambda.voltage"
+          },
+          {
+            "position": 3,
+            "measurement": "fuel.evap.duty"
+          },
+          {
+            "position": 4,
+            "measurement": "fuel.evap.lambdaCorrection"
+          }
+        ],
+        "11": [
+          {
+            "position": 1,
+            "measurement": "fuel.injection.duration"
+          },
+          {
+            "position": 2,
+            "measurement": "fuel.lambda.idleAdaptation"
+          },
+          {
+            "position": 3,
+            "measurement": "fuel.lambda.partialAdaptation"
+          },
+          {
+            "position": 4,
+            "measurement": "fuel.evap.state"
+          }
+        ],
+        "12": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "label": "Air mass",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          },
+          {
+            "position": 3,
+            "measurement": "fuel.lambda.correction"
+          },
+          {
+            "position": 4,
+            "measurement": "fuel.lambda.voltage"
+          }
+        ],
+        "15": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "label": "Air mass",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          },
+          {
+            "position": 3,
+            "measurement": "ignition.knock.retard14"
+          },
+          {
+            "position": 4,
+            "measurement": "ignition.knock.retard23"
+          }
+        ],
+        "16": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "label": "Air mass",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          },
+          {
+            "position": 3,
+            "measurement": "ignition.knock.retard23"
+          },
+          {
+            "position": 4,
+            "measurement": "ignition.knock.retard14"
+          }
+        ],
+        "17": [
+          {
+            "position": 1,
+            "measurement": "ignition.knock.signal14A"
+          },
+          {
+            "position": 2,
+            "measurement": "ignition.knock.signal23A"
+          },
+          {
+            "position": 3,
+            "measurement": "ignition.knock.signal14B"
+          },
+          {
+            "position": 4,
+            "measurement": "ignition.knock.signal23B"
+          }
+        ],
+        "19": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "label": "Unassigned value 2",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          },
+          {
+            "position": 3,
+            "measurement": "ac.request"
+          },
+          {
+            "position": 4,
+            "measurement": "ac.compressor"
+          }
+        ],
+        "20": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "label": "Air mass",
+            "applicability": "disregard",
+            "comment": "Not an applicable diagnostic measurement for this engine. Preserve its returned value in GroupRead."
+          },
+          {
+            "position": 3,
+            "measurement": "engine.temp"
+          },
+          {
+            "position": 4,
+            "measurement": "fuel.lambda.state"
+          }
+        ],
+        "21": [
+          {
+            "position": 1,
+            "measurement": "intake.throttle.state"
+          },
+          {
+            "position": 2,
+            "measurement": "throttle.calibration.minimum"
+          },
+          {
+            "position": 3,
+            "measurement": "throttle.calibration.emergency"
+          },
+          {
+            "position": 4,
+            "measurement": "throttle.calibration.maximum"
+          }
+        ],
+        "97": [
+          {
+            "position": 1,
+            "measurement": "throttle.calibration.throttleLowerVoltage"
+          },
+          {
+            "position": 2,
+            "measurement": "throttle.calibration.positionerLowerVoltage"
+          },
+          {
+            "position": 3,
+            "measurement": "throttle.calibration.throttleUpperVoltage"
+          },
+          {
+            "position": 4,
+            "measurement": "throttle.calibration.positionerUpperVoltage"
+          }
+        ],
+        "98": [
+          {
+            "position": 1,
+            "measurement": "intake.throttle.voltage"
+          },
+          {
+            "position": 2,
+            "measurement": "intake.throttle.positionerVoltage"
+          },
+          {
+            "position": 3,
+            "measurement": "intake.throttle.state"
+          },
+          {
+            "position": 4,
+            "measurement": "throttle.adaptationState"
+          }
+        ],
+        "99": [
+          {
+            "position": 1,
+            "measurement": "engine.rpm"
+          },
+          {
+            "position": 2,
+            "measurement": "engine.temp"
+          },
+          {
+            "position": 3,
+            "measurement": "fuel.lambda.correction"
+          },
+          {
+            "position": 4,
+            "measurement": "fuel.lambda.state"
+          }
+        ]
+      },
+      "dtcs": {
+        "00282": {
+          "component": "Throttle valve positioner (V60)",
+          "description": "Throttle valve positioner signal implausible.",
+          "variants": [
+            {
+              "failure": "Implausible signal",
+              "subtypes": [],
+              "causes": [
+                "Throttle plate/positioner binding",
+                "loose or oxidized connector",
+                "wiring open/short",
+                "V60 actuator fault",
+                "less commonly ECU output fault"
+              ],
+              "checks": [
+                "Inspect throttle body mechanically for sticking",
+                "inspect/clean connector and grounds",
+                "continuity/short-test V60 wiring",
+                "perform throttle-body/basic setting",
+                "test V60 per workshop procedure before replacing throttle body/ECU."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU."
+            },
+            {
+              "failure": "Regulation limit / deviation",
+              "subtypes": [],
+              "causes": [
+                "Throttle plate/positioner binding",
+                "loose or oxidized connector",
+                "wiring open/short",
+                "V60 actuator fault",
+                "less commonly ECU output fault"
+              ],
+              "checks": [
+                "Inspect throttle body mechanically for sticking",
+                "inspect/clean connector and grounds",
+                "continuity/short-test V60 wiring",
+                "perform throttle-body/basic setting",
+                "test V60 per workshop procedure before replacing throttle body/ECU."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU."
+            },
+            {
+              "failure": "Upper stop / signal out of tolerance",
+              "subtypes": [],
+              "causes": [
+                "Throttle plate/positioner binding",
+                "loose or oxidized connector",
+                "wiring open/short",
+                "V60 actuator fault",
+                "less commonly ECU output fault"
+              ],
+              "checks": [
+                "Inspect throttle body mechanically for sticking",
+                "inspect/clean connector and grounds",
+                "continuity/short-test V60 wiring",
+                "perform throttle-body/basic setting",
+                "test V60 per workshop procedure before replacing throttle body/ECU."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU."
+            },
+            {
+              "failure": "Open circuit / short to ground / short to B+",
+              "subtypes": [],
+              "causes": [
+                "Throttle plate/positioner binding",
+                "loose or oxidized connector",
+                "wiring open/short",
+                "V60 actuator fault",
+                "less commonly ECU output fault"
+              ],
+              "checks": [
+                "Inspect throttle body mechanically for sticking",
+                "inspect/clean connector and grounds",
+                "continuity/short-test V60 wiring",
+                "perform throttle-body/basic setting",
+                "test V60 per workshop procedure before replacing throttle body/ECU."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU."
+            },
+            {
+              "failure": "Blocked / no voltage",
+              "subtypes": [],
+              "causes": [
+                "Throttle plate/positioner binding",
+                "loose or oxidized connector",
+                "wiring open/short",
+                "V60 actuator fault",
+                "less commonly ECU output fault"
+              ],
+              "checks": [
+                "Check for a mechanically stuck throttle plate first",
+                "then connector, supply, ground and wiring. Test V60. Do not condemn ECU until wiring and actuator are verified."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU."
+            }
+          ]
+        },
+        "00513": {
+          "component": "Engine speed sensor (G28)",
+          "description": "No engine-speed signal from G28.",
+          "variants": [
+            {
+              "failure": "No signal",
+              "subtypes": [],
+              "causes": [
+                "Open circuit",
+                "short to ground",
+                "failed G28",
+                "damaged trigger wheel/wiring"
+              ],
+              "checks": [
+                "Inspect connector and harness",
+                "measure sensor/wiring",
+                "inspect trigger wheel and sensor gap",
+                "replace G28 only after wiring/mechanical checks."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0322",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Implausible signal",
+              "subtypes": [],
+              "causes": [
+                "G28 fault",
+                "sensor gap too large/small",
+                "connector/wiring intermittency",
+                "trigger wheel issue"
+              ],
+              "checks": [
+                "Check sensor gap/installation and trigger wheel",
+                "continuity-test wiring",
+                "inspect connector",
+                "replace G28 if signal remains implausible."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0321",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ]
+        },
+        "00515": {
+          "component": "Hall sender / cam position reference (G40)",
+          "description": "No Hall/reference signal from G40.",
+          "variants": [
+            {
+              "failure": "No signal",
+              "subtypes": [],
+              "causes": [
+                "Open wiring",
+                "failed G40",
+                "connector fault"
+              ],
+              "checks": [
+                "Inspect connector and wiring continuity",
+                "verify supply/ground and signal",
+                "replace G40 if wiring and supply are correct."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0340",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ],
+          "comment": "Applicability to this engine is unresolved. Retained as a reference for an actually returned fault, not as proof that this component or independent output exists."
+        },
+        "00516": {
+          "component": "Idling / closed-throttle switch (F60)",
+          "description": "Idle switch circuit shorted to ground or switch remains closed.",
+          "variants": [
+            {
+              "failure": "Short to ground / always closed",
+              "subtypes": [],
+              "causes": [
+                "Harness short to ground",
+                "F60 faulty/stuck",
+                "throttle cable/stop adjustment issue"
+              ],
+              "checks": [
+                "Check switch operation and harness",
+                "correct throttle cable setting",
+                "repair wiring or replace/repair throttle-body switch as required."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0510",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Open circuit / short to B+ / always open",
+              "subtypes": [],
+              "causes": [
+                "Open wiring",
+                "incorrect connector assignment",
+                "F60 faulty",
+                "throttle cable incorrectly adjusted"
+              ],
+              "checks": [
+                "Verify connector pinning, switch continuity and throttle cable adjustment",
+                "repair wiring",
+                "replace switch/throttle-body unit if necessary."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0510",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ]
+        },
+        "00518": {
+          "component": "Throttle valve potentiometer (G69)",
+          "description": "Throttle position sensor circuit low/short to ground.",
+          "variants": [
+            {
+              "failure": "Short to ground",
+              "subtypes": [],
+              "causes": [
+                "G69 or wiring short to ground",
+                "damaged connector",
+                "possible intermittent harness fault"
+              ],
+              "checks": [
+                "Inspect connector and earths",
+                "continuity/short-test wiring",
+                "verify G69 sweep/voltage",
+                "repair wiring or replace throttle-body unit if sensor is faulty."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0122",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Open circuit / short to B+",
+              "subtypes": [],
+              "causes": [
+                "Open wiring",
+                "short to positive",
+                "incorrect connector assignment",
+                "G69 fault"
+              ],
+              "checks": [
+                "Check pin assignment, connector and harness",
+                "measure sensor supply/signal/ground and sweep",
+                "repair wiring or replace throttle-body unit."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0123",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Implausible signal / out of tolerance",
+              "subtypes": [],
+              "causes": [
+                "Poor throttle-body earth",
+                "intermittent open/short",
+                "worn G69 track",
+                "mechanical throttle issue"
+              ],
+              "checks": [
+                "Clean/verify throttle-body ground and connector",
+                "check smooth sensor sweep",
+                "inspect throttle movement",
+                "perform basic setting after repair."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0121",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ]
+        },
+        "00519": {
+          "component": "Intake manifold pressure sensor (G71)",
+          "description": "MAP sensor signal circuit low/open-to-ground condition.",
+          "variants": [
+            {
+              "failure": "Open circuit / short to ground",
+              "subtypes": [],
+              "causes": [
+                "G71 fault",
+                "open wiring",
+                "short to ground",
+                "connector fault",
+                "on some revisions G28-related plausibility can contribute"
+              ],
+              "checks": [
+                "Check G71 supply, ground and signal wiring",
+                "inspect combined pressure/temperature sensor connector",
+                "compare live MAP with atmospheric pressure",
+                "repair wiring or replace sensor."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0107",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Open circuit / short to B+",
+              "subtypes": [],
+              "causes": [
+                "G71 fault",
+                "open wiring",
+                "short to positive",
+                "connector fault"
+              ],
+              "checks": [
+                "Check supply, ground, signal and connector",
+                "continuity/short-test harness",
+                "replace G71 if electrical tests fail."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0108",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Implausible signal",
+              "subtypes": [],
+              "causes": [
+                "G71 drift/failure",
+                "vacuum leak",
+                "blocked pressure passage",
+                "intermittent wiring",
+                "incorrect sensor supply"
+              ],
+              "checks": [
+                "Compare MAP live value key-on/engine-off and running",
+                "inspect intake for leaks/blockage",
+                "verify 5 V supply and wiring",
+                "replace sensor if needed."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0106",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ]
+        },
+        "00522": {
+          "component": "Coolant temperature sender (G62)",
+          "description": "Coolant-temperature signal circuit low voltage (typically reads unrealistically hot).",
+          "variants": [
+            {
+              "failure": "Short to ground",
+              "subtypes": [],
+              "causes": [
+                "G62 internal short",
+                "harness short to ground",
+                "connector contamination"
+              ],
+              "checks": [
+                "Compare live temperature to ambient when cold",
+                "inspect connector/wiring",
+                "resistance-test G62",
+                "replace sender if out of specification."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0117",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Open circuit / short to B+",
+              "subtypes": [],
+              "causes": [
+                "Open circuit",
+                "short to positive",
+                "G62 failure",
+                "connector fault"
+              ],
+              "checks": [
+                "Inspect connector and harness",
+                "resistance-test sensor",
+                "verify ECU reference/ground",
+                "repair wiring or replace G62."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0118",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Implausible signal",
+              "subtypes": [],
+              "causes": [
+                "Intermittent wiring/connector",
+                "G62 internal intermittency",
+                "poor sensor contact"
+              ],
+              "checks": [
+                "Log coolant temperature from cold start",
+                "wiggle-test harness",
+                "inspect connector",
+                "replace G62 if the value jumps or fails resistance checks."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0116",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ]
+        },
+        "00523": {
+          "component": "Intake air temperature sender (G42)",
+          "description": "Intake-air temperature circuit low voltage.",
+          "variants": [
+            {
+              "failure": "Short to ground",
+              "subtypes": [],
+              "causes": [
+                "G42 internal short",
+                "wiring short to ground",
+                "connector fault"
+              ],
+              "checks": [
+                "Compare IAT to ambient after cold soak",
+                "inspect combined G42/G71 connector and harness",
+                "resistance-test/replace sensor as needed."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0112",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Open circuit / short to B+",
+              "subtypes": [],
+              "causes": [
+                "Open harness",
+                "short to positive",
+                "G42 failure",
+                "connector fault"
+              ],
+              "checks": [
+                "Check connector, supply/ground and continuity",
+                "compare IAT to ambient",
+                "repair harness or replace combined sensor."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0113",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Sensor faulty / implausible",
+              "subtypes": [],
+              "causes": [
+                "Sensor drift/failure",
+                "intermittent connector",
+                "harness fault"
+              ],
+              "checks": [
+                "Check live IAT against ambient and coolant temperature when cold",
+                "wiggle-test wiring",
+                "replace G42 if signal remains implausible."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0110",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ]
+        },
+        "00524": {
+          "component": "Knock sensor 1 (G61)",
+          "description": "Knock sensor circuit fault.",
+          "variants": [
+            {
+              "failure": "Sensor faulty / circuit fault",
+              "subtypes": [],
+              "causes": [
+                "G61 fault",
+                "open wiring",
+                "connector problem",
+                "incorrect mounting/torque"
+              ],
+              "checks": [
+                "Inspect wiring/connector",
+                "verify sensor mounting surface and tightening torque",
+                "test circuit",
+                "replace G61 if wiring/mounting are correct."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0325",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Implausible signal",
+              "subtypes": [],
+              "causes": [
+                "Loose/incorrectly mounted sensor",
+                "connector intermittency",
+                "G61 fault",
+                "engine mechanical noise"
+              ],
+              "checks": [
+                "Verify correct sensor torque/mounting and connector",
+                "inspect wiring",
+                "compare knock values",
+                "investigate abnormal mechanical noise if electrical checks pass."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0326",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Signal too small",
+              "subtypes": [],
+              "causes": [
+                "Loose sensor",
+                "poor contact/mounting",
+                "wiring resistance/open circuit",
+                "G61 failure"
+              ],
+              "checks": [
+                "Check mounting torque/surface and harness",
+                "test sensor circuit",
+                "replace G61 if necessary."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0327",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ]
+        },
+        "00525": {
+          "component": "Lambda / oxygen sensor (G39)",
+          "description": "No usable oxygen-sensor signal.",
+          "variants": [
+            {
+              "failure": "No signal / input open",
+              "subtypes": [],
+              "causes": [
+                "Open wiring",
+                "connector fault",
+                "failed G39",
+                "sensor not hot due heater/supply issue"
+              ],
+              "checks": [
+                "Inspect lambda connector/wiring",
+                "verify heater supply/continuity",
+                "monitor sensor voltage warm",
+                "repair wiring/heater or replace G39 if non-responsive."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0134",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Short to ground / signal too low",
+              "subtypes": [],
+              "causes": [
+                "Signal wire short to ground",
+                "contaminated/failed G39",
+                "genuine lean exhaust condition can also hold voltage low"
+              ],
+              "checks": [
+                "Check signal wiring for short",
+                "inspect intake/exhaust leaks and fuel supply if wiring is sound",
+                "verify sensor switching",
+                "replace G39 only after mixture faults are excluded."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0131",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Short to B+ / signal too high",
+              "subtypes": [],
+              "causes": [
+                "Signal wire short to positive",
+                "G39 failure",
+                "genuine rich mixture can also hold voltage high"
+              ],
+              "checks": [
+                "Check signal wiring",
+                "verify fuel pressure/injectors/EVAP if electrically sound",
+                "observe lambda switching",
+                "replace G39 if sensor is proven faulty."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0132",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Implausible / out of tolerance",
+              "subtypes": [],
+              "causes": [
+                "Aged/contaminated G39",
+                "intermittent wiring",
+                "exhaust leak",
+                "fuel-mixture fault"
+              ],
+              "checks": [
+                "Check exhaust/intake leaks and fuel control",
+                "inspect wiring and heater",
+                "evaluate warm sensor switching",
+                "replace sensor if response remains abnormal."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0130",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ]
+        },
+        "00530": {
+          "component": "Throttle valve positioner potentiometer (G88)",
+          "description": "Throttle actuator position feedback circuit low/open-to-ground.",
+          "variants": [
+            {
+              "failure": "Open circuit / short to ground",
+              "subtypes": [],
+              "causes": [
+                "Open/shorted wiring",
+                "poor throttle-body earth",
+                "G88 potentiometer fault",
+                "throttle-body mechanical fault",
+                "connector pinning problem"
+              ],
+              "checks": [
+                "Inspect throttle-body connector, earth and wiring",
+                "verify G88 signal sweep",
+                "check throttle plate/actuator mechanically",
+                "repair wiring or throttle-body unit",
+                "perform basic setting afterward."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0222",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Short to B+",
+              "subtypes": [],
+              "causes": [
+                "Open/shorted wiring",
+                "poor throttle-body earth",
+                "G88 potentiometer fault",
+                "throttle-body mechanical fault",
+                "connector pinning problem"
+              ],
+              "checks": [
+                "Inspect throttle-body connector, earth and wiring",
+                "verify G88 signal sweep",
+                "check throttle plate/actuator mechanically",
+                "repair wiring or throttle-body unit",
+                "perform basic setting afterward."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0223",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Implausible signal",
+              "subtypes": [],
+              "causes": [
+                "Open/shorted wiring",
+                "poor throttle-body earth",
+                "G88 potentiometer fault",
+                "throttle-body mechanical fault",
+                "connector pinning problem"
+              ],
+              "checks": [
+                "Inspect throttle-body connector, earth and wiring",
+                "verify G88 signal sweep",
+                "check throttle plate/actuator mechanically",
+                "repair wiring or throttle-body unit",
+                "perform basic setting afterward."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0221",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Control difference / regulation limit exceeded",
+              "subtypes": [],
+              "causes": [
+                "Open/shorted wiring",
+                "poor throttle-body earth",
+                "G88 potentiometer fault",
+                "throttle-body mechanical fault",
+                "connector pinning problem"
+              ],
+              "checks": [
+                "Inspect throttle-body connector, earth and wiring",
+                "verify G88 signal sweep",
+                "check throttle plate/actuator mechanically",
+                "repair wiring or throttle-body unit",
+                "perform basic setting afterward."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU."
+            }
+          ]
+        },
+        "00537": {
+          "component": "Lambda regulation (G39 / fuel control)",
+          "description": "Fuel correction has reached its enrichment limit. Mixture remains too lean.",
+          "variants": [
+            {
+              "failure": "Upper limit reached",
+              "subtypes": [],
+              "causes": [
+                "Lambda heater fault",
+                "exhaust leak before catalyst",
+                "ignition misfire",
+                "low fuel pressure",
+                "weak pump/regulator",
+                "intake/unmetered-air leak",
+                "restricted injector(s)",
+                "contaminated G39",
+                "empty/very low fuel"
+              ],
+              "checks": [
+                "Check intake and exhaust leaks first",
+                "verify ignition/misfires",
+                "measure fuel pressure and delivery",
+                "check injectors",
+                "verify lambda heater/sensor response. After repair, erase learned values/adaptation as specified by the factory manual."
+              ],
+              "comment": "The regulation direction and any lean or rich equivalent need checking. The limit name alone is insufficient."
+            },
+            {
+              "failure": "Lower limit reached",
+              "subtypes": [],
+              "causes": [
+                "Fuel pressure too high",
+                "N80 EVAP purge valve leaking/jammed open",
+                "injector leakage",
+                "contaminated/biased G39"
+              ],
+              "checks": [
+                "Measure fuel pressure",
+                "test N80 for leakage/sticking",
+                "check injectors for leakage",
+                "verify lambda response. Erase learned values/adaptation after repair per factory procedure."
+              ],
+              "comment": "The regulation direction and any lean or rich equivalent need checking. The limit name alone is insufficient."
+            }
+          ]
+        },
+        "01087": {
+          "component": "Basic setting (Throttle body / G88 / F60)",
+          "description": "Throttle-body basic setting/adaptation has not been completed successfully.",
+          "variants": [
+            {
+              "failure": "Basic setting not carried out / implausible",
+              "subtypes": [],
+              "causes": [
+                "Incorrect connector assignment",
+                "open wiring",
+                "poor throttle-body earth",
+                "G88 fault",
+                "F60 fault",
+                "throttle body dirty/sticking",
+                "adaptation interrupted"
+              ],
+              "checks": [
+                "Check connector/wiring/earth and throttle body",
+                "verify F60 and G88",
+                "clean/repair as necessary",
+                "then perform throttle-body basic setting/adaptation with correct conditions."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU."
+            }
+          ]
+        },
+        "01247": {
+          "component": "Activated-charcoal / EVAP purge solenoid valve 1 (N80)",
+          "description": "N80 purge-valve control circuit shorted to ground.",
+          "variants": [
+            {
+              "failure": "Short to ground",
+              "subtypes": [],
+              "causes": [
+                "Harness short to ground",
+                "N80 coil fault",
+                "ECU output-stage fault"
+              ],
+              "checks": [
+                "Inspect N80 connector/harness",
+                "measure coil resistance",
+                "actuator-test N80",
+                "repair wiring or replace N80. Consider ECU output only after load/wiring are verified."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0445",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Open circuit / output open",
+              "subtypes": [],
+              "causes": [
+                "Open harness/connector",
+                "N80 coil open",
+                "ECU output-stage fault"
+              ],
+              "checks": [
+                "Continuity-test wiring and coil",
+                "actuator-test N80",
+                "repair harness/connector or replace N80 if coil is open."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0444",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Short to B+",
+              "subtypes": [],
+              "causes": [
+                "Harness short to positive",
+                "N80/connector fault",
+                "ECU output-stage fault"
+              ],
+              "checks": [
+                "Inspect harness for B+ contact",
+                "test N80 resistance/operation",
+                "repair wiring or replace N80 if required."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0445",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ]
+        },
+        "01249": {
+          "component": "Injector output: cylinder 1 or 4 (N30/N33)",
+          "description": "The reported injector output requires checking both cylinders in this pair.",
+          "variants": [
+            {
+              "failure": "Open circuit / short to B+",
+              "subtypes": [],
+              "causes": [
+                "Open/shorted injector wiring",
+                "connector fault",
+                "injector coil fault",
+                "less commonly ECU driver"
+              ],
+              "checks": [
+                "Inspect connectors and wiring for both N30/N33 injectors",
+                "Test both injectors on cylinders 1 and 4. The code does not identify which injector failed",
+                "Check ECU output only after wiring and injectors"
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU."
+            },
+            {
+              "failure": "Short to ground",
+              "subtypes": [],
+              "causes": [
+                "Harness short to ground",
+                "injector coil/internal fault",
+                "less commonly ECU driver"
+              ],
+              "checks": [
+                "Inspect connectors and wiring for both N30/N33 injectors",
+                "Test both injectors on cylinders 1 and 4. The code does not identify which injector failed",
+                "Check ECU output only after wiring and injectors"
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU."
+            }
+          ]
+        },
+        "01250": {
+          "component": "Injector output: cylinder 2 or 3 (N31/N32)",
+          "description": "The reported injector output requires checking both cylinders in this pair.",
+          "variants": [
+            {
+              "failure": "Open circuit / short to B+",
+              "subtypes": [],
+              "causes": [
+                "Open/shorted injector wiring",
+                "connector fault",
+                "injector coil fault",
+                "less commonly ECU driver"
+              ],
+              "checks": [
+                "Inspect connectors and wiring for both N31/N32 injectors",
+                "Test both injectors on cylinders 2 and 3. The code does not identify which injector failed",
+                "Check ECU output only after wiring and injectors"
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU."
+            },
+            {
+              "failure": "Short to ground",
+              "subtypes": [],
+              "causes": [
+                "Harness short to ground",
+                "injector coil/internal fault",
+                "less commonly ECU driver"
+              ],
+              "checks": [
+                "Inspect connectors and wiring for both N31/N32 injectors",
+                "Test both injectors on cylinders 2 and 3. The code does not identify which injector failed",
+                "Check ECU output only after wiring and injectors"
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU."
+            }
+          ]
+        },
+        "01251": {
+          "component": "Fuel injector cylinder 3 (N32)",
+          "description": "Electrical fault in injector circuit for cylinder 3.",
+          "variants": [
+            {
+              "failure": "Open circuit / short to B+",
+              "subtypes": [],
+              "causes": [
+                "Open/shorted injector wiring",
+                "connector fault",
+                "injector coil fault",
+                "less commonly ECU driver"
+              ],
+              "checks": [
+                "Inspect injector 3 connector and harness",
+                "measure injector coil resistance",
+                "continuity/short-test to ECU",
+                "repair wiring or replace injector if coil is faulty."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0203",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Short to ground",
+              "subtypes": [],
+              "causes": [
+                "Harness short to ground",
+                "injector coil/internal fault",
+                "less commonly ECU driver"
+              ],
+              "checks": [
+                "Disconnect injector and test harness for short to ground",
+                "check injector resistance",
+                "repair wiring or replace injector 3 as needed."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0203",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ],
+          "comment": "Applicability to this engine is unresolved. Retained as a reference for an actually returned fault, not as proof that this component or independent output exists."
+        },
+        "01252": {
+          "component": "Fuel injector cylinder 4 (N33)",
+          "description": "Electrical fault in injector circuit for cylinder 4.",
+          "variants": [
+            {
+              "failure": "Open circuit / short to B+",
+              "subtypes": [],
+              "causes": [
+                "Open/shorted injector wiring",
+                "connector fault",
+                "injector coil fault",
+                "less commonly ECU driver"
+              ],
+              "checks": [
+                "Inspect injector 4 connector and harness",
+                "measure injector coil resistance",
+                "continuity/short-test to ECU",
+                "repair wiring or replace injector if coil is faulty."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0204",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Short to ground",
+              "subtypes": [],
+              "causes": [
+                "Harness short to ground",
+                "injector coil/internal fault",
+                "less commonly ECU driver"
+              ],
+              "checks": [
+                "Disconnect injector and test harness for short to ground",
+                "check injector resistance",
+                "repair wiring or replace injector 4 as needed."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0204",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ],
+          "comment": "Applicability to this engine is unresolved. Retained as a reference for an actually returned fault, not as proof that this component or independent output exists."
+        },
+        "01259": {
+          "component": "Fuel pump relay (J17)",
+          "description": "Fuel-pump relay circuit or relay operation faulty.",
+          "variants": [
+            {
+              "failure": "Relay / circuit fault",
+              "subtypes": [],
+              "causes": [
+                "J17 relay fault",
+                "open wiring",
+                "poor relay/socket contacts",
+                "power/ground issue",
+                "ECU output-stage fault"
+              ],
+              "checks": [
+                "Check fuse/power supply, relay socket and J17 operation",
+                "actuator-test relay/pump",
+                "continuity-test ECU control wire",
+                "replace relay or repair wiring as required."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0230",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Short to B+",
+              "subtypes": [],
+              "causes": [
+                "Control wire short to B+",
+                "relay/socket fault",
+                "ECU output-stage issue"
+              ],
+              "checks": [
+                "Inspect control wire and relay socket",
+                "test J17",
+                "repair short. Verify ECU output only after wiring/relay tests."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0230",
+              "obdMapping": "approximate equivalent for reference only"
+            },
+            {
+              "failure": "Control-unit output fault",
+              "subtypes": [],
+              "causes": [
+                "ECU output-stage fault or external circuit overload/short that damaged or trips the driver"
+              ],
+              "checks": [
+                "First verify J17 coil resistance and harness for shorts",
+                "if external circuit is correct, test/replace ECU according to factory procedure."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0230",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ]
+        },
+        "65535": {
+          "component": "Engine control unit (J361)",
+          "description": "Internal ECU/control-unit fault.",
+          "variants": [
+            {
+              "failure": "Internal control-unit fault",
+              "subtypes": [],
+              "causes": [
+                "ECU internal memory/electronics fault",
+                "unstable supply voltage",
+                "poor ECU grounds",
+                "water/corrosion",
+                "electrical disturbance"
+              ],
+              "checks": [
+                "Do not replace ECU immediately: verify battery/charging voltage, ECU powers and grounds, connector condition and water ingress",
+                "clear/retest. If 65535 returns with supplies correct, repair/replace and adapt the ECU as required."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P0606",
+              "obdMapping": "approximate equivalent for reference only"
+            }
+          ],
+          "comment": "Applicability to this engine is unresolved. Retained as a reference for an actually returned fault, not as proof that this component or independent output exists."
+        },
+        "17978": {
+          "component": "Engine start authorization / immobilizer (ECU + immobilizer)",
+          "description": "Engine ECU has not received valid start authorization from the immobilizer.",
+          "variants": [
+            {
+              "failure": "Engine start blocked by immobilizer",
+              "subtypes": [],
+              "causes": [
+                "Key/transponder not recognized",
+                "immobilizer pickup coil/wiring fault",
+                "ECU/immobilizer adaptation mismatch",
+                "intermittent power/ground/communication issue"
+              ],
+              "checks": [
+                "Try a known-good key",
+                "read immobilizer module faults",
+                "inspect pickup coil and wiring",
+                "verify powers/grounds",
+                "perform ECU/immobilizer/key adaptation with appropriate diagnostic procedure if components were changed."
+              ],
+              "comment": "The numeric fault subtype needs verification. Keep the code and status returned by the ECU.",
+              "obdCode": "P1570",
+              "obdMapping": "manufacturer-specific reference"
+            }
+          ]
+        },
+        "00533": {
+          "component": "Idle regulation",
+          "description": "Upper/lower regulation stop",
+          "variants": [
+            {
+              "failure": "Upper/lower regulation stop",
+              "subtypes": [],
+              "causes": [],
+              "checks": [
+                "Inspect throttle positioner feedback and intake leaks. Check purge valve and intake restrictions"
+              ],
+              "comment": "Numeric subtype mapping needs verification."
+            }
+          ]
+        },
+        "00609": {
+          "component": "Ignition output 1: cylinders 1 or 4",
+          "description": "Short to positive",
+          "variants": [
+            {
+              "failure": "Short to positive",
+              "subtypes": [],
+              "causes": [],
+              "checks": [
+                "Inspect ignition rail wiring for cylinders 1/4 before investigating the ECU output"
+              ],
+              "comment": "Numeric subtype mapping needs verification."
+            }
+          ]
+        },
+        "00610": {
+          "component": "Ignition output 2: cylinders 2 or 3",
+          "description": "Short to positive",
+          "variants": [
+            {
+              "failure": "Short to positive",
+              "subtypes": [],
+              "causes": [],
+              "checks": [
+                "Inspect ignition rail wiring for cylinders 2/3 before investigating the ECU output"
+              ],
+              "comment": "Numeric subtype mapping needs verification."
+            }
+          ]
+        },
+        "00624": {
+          "component": "A/C compressor engagement",
+          "description": "Short to positive",
+          "variants": [
+            {
+              "failure": "Short to positive",
+              "subtypes": [],
+              "causes": [],
+              "checks": [
+                "Inspect A/C control wiring and compressor-control circuit before investigating the ECU output"
+              ],
+              "comment": "Numeric subtype mapping needs verification."
+            }
+          ]
+        },
+        "00635": {
+          "component": "Lambda sensor heating",
+          "description": "Short to positive, open/short to ground, or faulty heater",
+          "variants": [
+            {
+              "failure": "Short to positive, open/short to ground, or faulty heater",
+              "subtypes": [],
+              "causes": [],
+              "checks": [
+                "Inspect heater wiring and lambda heater before investigating the ECU output"
+              ],
+              "comment": "Numeric subtype mapping needs verification."
+            }
+          ]
+        },
+        "01126": {
+          "component": "Engine-speed output signal",
+          "description": "Short to positive",
+          "variants": [
+            {
+              "failure": "Short to positive",
+              "subtypes": [],
+              "causes": [],
+              "checks": [
+                "Inspect engine-speed signal wiring and instrument-panel connection"
+              ],
+              "comment": "Numeric subtype mapping needs verification."
+            }
+          ]
+        },
+        "01177": {
+          "component": "Engine control unit (J361)",
+          "description": "Faulty control unit or changed EPROM contents",
+          "variants": [
+            {
+              "failure": "Faulty control unit or changed EPROM contents",
+              "subtypes": [],
+              "causes": [],
+              "checks": [
+                "Check ECU identification and integrity after verifying powers and grounds"
+              ],
+              "comment": "Numeric subtype mapping needs verification."
+            }
+          ]
+        },
+        "01242": {
+          "component": "ECU output stages",
+          "description": "Implausible signal. ECU overtemperature detected",
+          "variants": [
+            {
+              "failure": "Implausible signal. ECU overtemperature detected",
+              "subtypes": [],
+              "causes": [],
+              "checks": [
+                "Investigate ECU temperature and output-stage loads before replacement"
+              ],
+              "comment": "Numeric subtype mapping needs verification."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "address": "0x25",
+      "aliases": [
+        "immobilizer",
+        "immo"
+      ],
+      "present": true,
+      "comment": "Read-only identification and generic faults. Engine DTC definitions do not apply here. The connection rate still needs testing.",
+      "measurements": {},
+      "groups": {},
+      "dtcs": {}
+    }
+  ]
+}

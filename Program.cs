@@ -42,9 +42,16 @@ class Program
         }
         catch (UnableToProceedException)
         {
+            Environment.ExitCode = 1;
+        }
+        catch (ArgumentException ex)
+        {
+            Log.WriteLine(ex.Message);
+            Environment.ExitCode = 1;
         }
         catch (Exception ex)
         {
+            Environment.ExitCode = 1;
             Log.WriteLine($"Caught: {ex.GetType()} {ex.Message}");
             Log.WriteLine($"Unhandled exception: {ex}");
         }
@@ -73,6 +80,20 @@ class Program
         Log.WriteLine($".NET Version: {Environment.Version}");
         Log.WriteLine($"Culture: {CultureInfo.InstalledUICulture}");
 
+        var selection = VehicleProfile.ExtractOption(args, Environment.GetEnvironmentVariable(VehicleProfile.EnvironmentVariable));
+        args = selection.Arguments;
+        if (args.Length > 0 && args[0].Equals("ProfileInfo", StringComparison.OrdinalIgnoreCase))
+        {
+            if (args.Length > 2) throw new ArgumentException("Usage: ProfileInfo [IDENTIFIER_OR_PATH] [--profile IDENTIFIER_OR_PATH]");
+            string selector = args.Length == 2 ? args[1] : selection.Selector
+                ?? throw new ArgumentException("ProfileInfo requires a profile identifier/path or KW1281TEST_PROFILE.");
+            Log.WriteLine(VehicleProfile.Load(selector).Describe());
+            return;
+        }
+        var profile = selection.Selector == null ? null : VehicleProfile.Load(selection.Selector);
+        args = ConnectionArguments.Normalize(args, profile,
+            Environment.GetEnvironmentVariable(ConnectionArguments.PortVariable),
+            Environment.GetEnvironmentVariable(ConnectionArguments.BaudVariable));
         if (args.Length < 4)
         {
             ShowUsage();
@@ -90,8 +111,9 @@ class Program
         }
 
         string portName = args[0];
-        var baudRate = int.Parse(args[1]);
-        int controllerAddress = int.Parse(args[2], NumberStyles.HexNumber);
+        int controllerAddress = profile?.ResolveAddress(args[2]) ?? VehicleProfile.ParseAddress(args[2]);
+        var baudRate = profile?.ResolveBaud(args[1], controllerAddress) ?? int.Parse(args[1], CultureInfo.InvariantCulture);
+        if (baudRate <= 0) throw new ArgumentException("Baud rate must be positive.");
         var command = args[3];
         uint? address = null;
         uint? length = null;
@@ -300,13 +322,22 @@ class Program
             login = ushort.Parse(args[4]);
         }
 
+        var once = args.Contains("--once", StringComparer.OrdinalIgnoreCase);
+        List<SelectedMeasurement>? sensors = null;
+        if (command.Equals("Sensors", StringComparison.OrdinalIgnoreCase))
+        {
+            if (args.Length < 5 || args.Skip(5).Any(x => !x.Equals("--once", StringComparison.OrdinalIgnoreCase)))
+                throw new ArgumentException("Usage: Sensors SELECTOR[,SELECTOR...] [--once]");
+            sensors = profile?.FindUnit(controllerAddress)?.Select(args[4])
+                ?? throw new ArgumentException("Sensors requires a profile with measurements for the selected controller.");
+        }
         using var @interface = OpenPort(portName, baudRate);
-        var tester = new Tester(@interface, controllerAddress);
+        var tester = new Tester(@interface, controllerAddress, profile);
         
         switch (command.ToLower())
         {
             case "autoscan":
-                AutoScan(@interface);
+                AutoScan(@interface, profile, args[1]);
                 return;
 
             case "dumprbxmem":
@@ -418,6 +449,17 @@ class Program
                 tester.GetClusterId();
                 break;
 
+            case "sensors":
+                try
+                {
+                    tester.Sensors(sensors!, once);
+                }
+                finally
+                {
+                    tester.EndCommunication();
+                }
+                return;
+
             case "groupread":
                 tester.GroupRead(groupNumber);
                 break;
@@ -482,16 +524,19 @@ class Program
         tester.EndCommunication();
     }
 
-    private static void AutoScan(IInterface @interface)
+    private static void AutoScan(IInterface @interface, VehicleProfile? profile = null, string baudArgument = "10400")
     {
         var kwp1281Addresses = new List<string>();
         var kwp2000Addresses = new List<string>();
         foreach (var evenParity in new bool[] { false, true })
         {
             var parity = evenParity ? "(EvenParity)" : "";
-            for (var address = 0; address < 0x80; address++)
+            var addresses = profile == null ? Enumerable.Range(0, 0x80)
+                : profile.Units.Where(x => x.Present).Select(x => x.NumericAddress);
+            foreach (var address in addresses)
             {
-                var tester = new Tester(@interface, address);
+                if (profile != null) @interface.SetBaudRate(profile.ResolveBaud(baudArgument, address));
+                var tester = new Tester(@interface, address, profile);
                 try
                 {
                     Log.WriteLine($"Attempting to wake up controller at address {address:X}{parity}...");
@@ -636,6 +681,11 @@ class Program
         Log.WriteLine("""
 Usage: KW1281Test PORT BAUD ADDRESS COMMAND [args]
                 
+Profiles: --profile IDENTIFIER_OR_PATH overrides KW1281TEST_PROFILE.
+Connection defaults: KW1281TEST_PORT and KW1281TEST_BAUD_RATE allow
+    KW1281Test ADDRESS COMMAND [args]. Explicit positional values win.
+BAUD may be auto with a profile; ADDRESS may be a profile alias (ecu, immo).
+
 PORT = COM1|COM2|etc. (Windows)
     /dev/ttyXXXX (Linux)
     AABBCCDD (macOS/Linux FTDI cable serial number)
@@ -693,6 +743,10 @@ COMMAND =
     FindLogins LOGIN
         LOGIN = Known good login (0-65535)
     GetSKC
+    ProfileInfo [IDENTIFIER_OR_PATH]
+        Offline profile settings, measurement paths, applicability and comments.
+    Sensors SELECTOR[,SELECTOR...] [--once]
+        Any profile measurement path/category, e.g. engine, engine.rpm, ac, or all.
     GroupRead GROUP
         GROUP = Group number (0-255)
         (Group 0: Raw controller data)

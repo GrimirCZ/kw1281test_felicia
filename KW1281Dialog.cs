@@ -80,6 +80,8 @@ internal interface IKW1281Dialog
 
     bool GroupRead(byte groupNumber, bool useBasicSetting = false);
 
+    void ReadSensors(IReadOnlyList<SelectedMeasurement> selected, bool once);
+
     List<byte> ReadSecureImmoAccess(List<byte> blockBytes);
 
     public IKwpCommon KwpCommon { get; }
@@ -765,11 +767,12 @@ internal class KW1281Dialog : IKW1281Dialog
         }
 
         GroupReadResponseWithTextBlock? textBlock = null;
+        byte textGroup = groupNumber;
 
         Log.WriteLine("[Up arrow | Down arrow | Q to quit]", LogDest.Console);
         while (true)
         {
-            if (Console.KeyAvailable)
+            if (!Console.IsInputRedirected && Console.KeyAvailable)
             {
                 var keyInfo = Console.ReadKey(intercept: true);
                 if (keyInfo.Key == ConsoleKey.UpArrow)
@@ -792,14 +795,14 @@ internal class KW1281Dialog : IKW1281Dialog
                 }
             }
 
-            var bytes = new List<byte>
+            if (groupNumber != textGroup)
             {
-                (byte)(useBasicSetting ? BlockTitle.BasicSettingRead : BlockTitle.GroupRead),
-                groupNumber
-            };
-            SendBlock(bytes);
-
+                textBlock = null;
+                textGroup = groupNumber;
+            }
+            SendBlock(MeasurementReader.Request(groupNumber, useBasicSetting));
             var responseBlock = ReceiveBlock();
+
             if (responseBlock is NakBlock)
             {
                 Overlay($"Group {groupNumber:D3}: Not Available");
@@ -811,7 +814,7 @@ internal class KW1281Dialog : IKW1281Dialog
             }
             else if (responseBlock is GroupReadResponseBlock groupReading)
             {
-                Overlay($"Group {groupNumber:D3}: {groupReading}");
+                Overlay($"Group {groupNumber:D3}: {(_profileUnit == null ? groupReading.ToString() : DiagnosticFormatter.Group(_profileUnit, groupNumber, groupReading))}");
             }
             else if (responseBlock is RawDataReadResponseBlock rawData)
             {
@@ -824,7 +827,7 @@ internal class KW1281Dialog : IKW1281Dialog
                 }
                 else
                 {
-                    Overlay($"Group {groupNumber:D3}: {rawData}");
+                    Overlay($"Group {groupNumber:D3}: {(_profileUnit == null ? rawData.ToString() : DiagnosticFormatter.Group(_profileUnit, groupNumber, rawData))}");
                 }
             }
             else
@@ -836,6 +839,29 @@ internal class KW1281Dialog : IKW1281Dialog
         Log.WriteLine(LogDest.Console);
 
         return true;
+    }
+
+    public void ReadSensors(IReadOnlyList<SelectedMeasurement> selected, bool once)
+    {
+        using var cancellation = new CancellationTokenSource();
+        ConsoleCancelEventHandler cancel = (_, e) => { e.Cancel = true; cancellation.Cancel(); };
+        Console.CancelKeyPress += cancel;
+        try
+        {
+            Log.WriteLine("Sensors: sequential group samples with UTC timestamps. Q or Ctrl+C to stop.");
+            do
+            {
+                MeasurementReader.Sweep(selected,
+                    group => MeasurementReader.Read(group, SendBlock, ReceiveBlock),
+                    line => Log.WriteLine(line), () => cancellation.IsCancellationRequested);
+                if (once || cancellation.IsCancellationRequested) break;
+                if (!Console.IsInputRedirected && Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Q) break;
+            } while (!cancellation.IsCancellationRequested);
+        }
+        finally
+        {
+            Console.CancelKeyPress -= cancel;
+        }
     }
 
     private bool RawDataRead(bool useBasicSetting)
@@ -850,7 +876,7 @@ internal class KW1281Dialog : IKW1281Dialog
         }
 
         Log.WriteLine("[Press a key to quit]", LogDest.Console);
-        while (!Console.KeyAvailable)
+        while (Console.IsInputRedirected || !Console.KeyAvailable)
         {
             var bytes = new List<byte>
             {
@@ -866,7 +892,7 @@ internal class KW1281Dialog : IKW1281Dialog
                 return false;
             }
 
-            Overlay(rawDataReadResponse.ToString());
+            Overlay(_profileUnit == null ? rawDataReadResponse.ToString() : DiagnosticFormatter.Group(_profileUnit, 0, rawDataReadResponse));
         }
         Log.WriteLine(LogDest.Console);
 
@@ -902,6 +928,11 @@ internal class KW1281Dialog : IKW1281Dialog
     /// </summary>
     private static void Overlay(string message)
     {
+        if (Console.IsOutputRedirected)
+        {
+            Log.WriteLine(message);
+            return;
+        }
         (int left, int top) = Console.GetCursorPosition();
         Console.SetCursorPosition(0, top);
         if (left > 0)
@@ -928,8 +959,11 @@ internal class KW1281Dialog : IKW1281Dialog
 
     private byte? _blockCounter;
 
-    public KW1281Dialog(IKwpCommon kwpCommon)
+    private readonly ProfileUnit? _profileUnit;
+
+    public KW1281Dialog(IKwpCommon kwpCommon, ProfileUnit? profileUnit = null)
     {
+        _profileUnit = profileUnit;
         KwpCommon = kwpCommon;
         _isConnected = false;
         _blockCounter = null;
