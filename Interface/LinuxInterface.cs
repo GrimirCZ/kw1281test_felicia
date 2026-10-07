@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.IO.Ports;
 
@@ -30,7 +31,7 @@ public class LinuxInterface : IInterface
     private static extern int ioctl(int fd, uint request, IntPtr data);
 
     // Native method declarations
-    [DllImport(libc)]
+    [DllImport(libc, SetLastError = true)]
     private static extern int open(string pathname, int flags);
 
     [DllImport(libc)]
@@ -132,7 +133,11 @@ public class LinuxInterface : IInterface
         _fd = open(portName, O_RDWR | O_NOCTTY);
         if (_fd == -1)
         {
-            throw new IOException($"Failed to open port {portName}");
+            int error = Marshal.GetLastPInvokeError();
+            var cause = new Win32Exception(error);
+            if (error is 1 or 13)
+                throw new UnauthorizedAccessException($"Access denied opening port {portName}: {cause.Message}", cause);
+            throw new IOException($"Failed to open port {portName}: {cause.Message}", cause);
         }
 
         // Allocate struct and memory

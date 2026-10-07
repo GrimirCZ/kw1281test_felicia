@@ -80,6 +80,8 @@ internal interface IKW1281Dialog
 
     bool GroupRead(byte groupNumber, bool useBasicSetting = false);
 
+    void ReadSensors(IReadOnlyList<SelectedMeasurement> selected, bool once);
+
     List<byte> ReadSecureImmoAccess(List<byte> blockBytes);
 
     public IKwpCommon KwpCommon { get; }
@@ -765,11 +767,13 @@ internal class KW1281Dialog : IKW1281Dialog
         }
 
         GroupReadResponseWithTextBlock? textBlock = null;
+        byte textGroup = groupNumber;
+        _profileOverlayRows = 0;
 
         Log.WriteLine("[Up arrow | Down arrow | Q to quit]", LogDest.Console);
         while (true)
         {
-            if (Console.KeyAvailable)
+            if (!Console.IsInputRedirected && Console.KeyAvailable)
             {
                 var keyInfo = Console.ReadKey(intercept: true);
                 if (keyInfo.Key == ConsoleKey.UpArrow)
@@ -792,14 +796,14 @@ internal class KW1281Dialog : IKW1281Dialog
                 }
             }
 
-            var bytes = new List<byte>
+            if (groupNumber != textGroup)
             {
-                (byte)(useBasicSetting ? BlockTitle.BasicSettingRead : BlockTitle.GroupRead),
-                groupNumber
-            };
-            SendBlock(bytes);
-
+                textBlock = null;
+                textGroup = groupNumber;
+            }
+            SendBlock(MeasurementReader.Request(groupNumber, useBasicSetting));
             var responseBlock = ReceiveBlock();
+
             if (responseBlock is NakBlock)
             {
                 Overlay($"Group {groupNumber:D3}: Not Available");
@@ -811,11 +815,16 @@ internal class KW1281Dialog : IKW1281Dialog
             }
             else if (responseBlock is GroupReadResponseBlock groupReading)
             {
-                Overlay($"Group {groupNumber:D3}: {groupReading}");
+                Overlay($"Group {groupNumber:D3}: {(_profileUnit == null ? groupReading.ToString() : DiagnosticFormatter.Group(_profileUnit, groupNumber, groupReading))}");
             }
             else if (responseBlock is RawDataReadResponseBlock rawData)
             {
-                if (textBlock != null && rawData.Body.Count > 0)
+                if (_profileUnit != null)
+                {
+                    rawData.MeasurementHeader = textBlock;
+                    Overlay($"Group {groupNumber:D3}: {DiagnosticFormatter.Group(_profileUnit, groupNumber, rawData)}");
+                }
+                else if (textBlock != null && rawData.Body.Count > 0)
                 {
                     var sb = new StringBuilder($"Group {groupNumber:D3}: ");
                     sb.Append(textBlock.GetText(rawData.Body[0]));
@@ -824,7 +833,7 @@ internal class KW1281Dialog : IKW1281Dialog
                 }
                 else
                 {
-                    Overlay($"Group {groupNumber:D3}: {rawData}");
+                    Overlay($"Group {groupNumber:D3}: {(_profileUnit == null ? rawData.ToString() : DiagnosticFormatter.Group(_profileUnit, groupNumber, rawData))}");
                 }
             }
             else
@@ -838,8 +847,36 @@ internal class KW1281Dialog : IKW1281Dialog
         return true;
     }
 
+    public void ReadSensors(IReadOnlyList<SelectedMeasurement> selected, bool once)
+    {
+        if (_profileUnit == null) throw new InvalidOperationException("Sensors requires a controller profile.");
+        var headers = new Dictionary<byte, GroupReadResponseWithTextBlock>();
+        using var cancellation = new CancellationTokenSource();
+        ConsoleCancelEventHandler cancel = (_, e) => { e.Cancel = true; cancellation.Cancel(); };
+        Console.CancelKeyPress += cancel;
+        try
+        {
+            Log.WriteLine("Sensors: sequential group samples with UTC timestamps. Q or Ctrl+C to stop.");
+            do
+            {
+                MeasurementReader.Sweep(_profileUnit, selected,
+                    group => MeasurementReader.Read(group, SendBlock, ReceiveBlock,
+                        header => { headers[group] = header; Log.WriteLine(header.ToString(), LogDest.File); },
+                        header: headers.GetValueOrDefault(group)),
+                    line => Log.WriteLine(line), () => cancellation.IsCancellationRequested);
+                if (once || cancellation.IsCancellationRequested) break;
+                if (!Console.IsInputRedirected && Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Q) break;
+            } while (!cancellation.IsCancellationRequested);
+        }
+        finally
+        {
+            Console.CancelKeyPress -= cancel;
+        }
+    }
+
     private bool RawDataRead(bool useBasicSetting)
     {
+        _profileOverlayRows = 0;
         if (useBasicSetting)
         {
             Log.WriteLine($"Sending Basic Setting Raw Data Read block");
@@ -850,7 +887,7 @@ internal class KW1281Dialog : IKW1281Dialog
         }
 
         Log.WriteLine("[Press a key to quit]", LogDest.Console);
-        while (!Console.KeyAvailable)
+        while (Console.IsInputRedirected || !Console.KeyAvailable)
         {
             var bytes = new List<byte>
             {
@@ -866,7 +903,7 @@ internal class KW1281Dialog : IKW1281Dialog
                 return false;
             }
 
-            Overlay(rawDataReadResponse.ToString());
+            Overlay(_profileUnit == null ? rawDataReadResponse.ToString() : DiagnosticFormatter.Group(_profileUnit, 0, rawDataReadResponse));
         }
         Log.WriteLine(LogDest.Console);
 
@@ -900,8 +937,22 @@ internal class KW1281Dialog : IKW1281Dialog
     /// Erase the current console line and replace it with message.
     /// Also writes the message to the log.
     /// </summary>
-    private static void Overlay(string message)
+    private int _profileOverlayRows;
+    private int _profileOverlayWidth;
+
+    private void Overlay(string message)
     {
+        if (Console.IsOutputRedirected)
+        {
+            Log.WriteLine(message);
+            return;
+        }
+        if (_profileUnit != null)
+        {
+            OverlayProfile(message);
+            Log.WriteLine(message, LogDest.File);
+            return;
+        }
         (int left, int top) = Console.GetCursorPosition();
         Console.SetCursorPosition(0, top);
         if (left > 0)
@@ -911,6 +962,41 @@ internal class KW1281Dialog : IKW1281Dialog
         }
         Log.Write(message, LogDest.Console);
         Log.WriteLine(message, LogDest.File);
+    }
+
+    private void OverlayProfile(string message)
+    {
+        int width = Math.Max(1, Console.WindowWidth - 1);
+        string display = message.Replace(" | ", Environment.NewLine + "  ");
+        var rows = new List<string>();
+        foreach (string line in display.Split(Environment.NewLine))
+        {
+            if (line.Length == 0) rows.Add("");
+            for (int offset = 0; offset < line.Length; offset += width)
+                rows.Add(line.Substring(offset, Math.Min(width, line.Length - offset)));
+        }
+        if (rows.Count >= Console.WindowHeight)
+        {
+            Log.WriteLine(display, LogDest.Console);
+            _profileOverlayRows = 0;
+            return;
+        }
+        if (_profileOverlayWidth != width)
+        {
+            if (_profileOverlayRows > 0) Log.WriteLine(LogDest.Console);
+            _profileOverlayRows = 0;
+            _profileOverlayWidth = width;
+        }
+        int height = Math.Max(rows.Count, _profileOverlayRows);
+        int extraRows = _profileOverlayRows == 0 ? height - 1 : height - _profileOverlayRows;
+        if (extraRows > 0) Log.Write(new string('\n', extraRows), LogDest.Console);
+        int top = Console.GetCursorPosition().Top - height + 1;
+        for (int row = 0; row < height; row++)
+        {
+            Console.SetCursorPosition(0, Math.Max(0, top + row));
+            Log.Write((row < rows.Count ? rows[row] : "").PadRight(width), LogDest.Console);
+        }
+        _profileOverlayRows = height;
     }
 
     private static class TimeInterval
@@ -928,8 +1014,11 @@ internal class KW1281Dialog : IKW1281Dialog
 
     private byte? _blockCounter;
 
-    public KW1281Dialog(IKwpCommon kwpCommon)
+    private readonly ProfileUnit? _profileUnit;
+
+    public KW1281Dialog(IKwpCommon kwpCommon, ProfileUnit? profileUnit = null)
     {
+        _profileUnit = profileUnit;
         KwpCommon = kwpCommon;
         _isConnected = false;
         _blockCounter = null;

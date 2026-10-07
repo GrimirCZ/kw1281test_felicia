@@ -35,6 +35,7 @@
 
 	<ItemGroup>
 		<EmbeddedResource Include="EDC15\Loader.bin" />
+		<EmbeddedResource Include="Profiles\felicia-simos2p.json" />
 	</ItemGroup>
 
 	<ItemGroup>

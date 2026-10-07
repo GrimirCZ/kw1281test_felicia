@@ -18,10 +18,13 @@ internal class Tester
     private readonly IKW1281Dialog _kwp1281;
     private readonly int _controllerAddress;
 
-    public Tester(IInterface @interface, int controllerAddress)
+    private readonly ProfileUnit? _profileUnit;
+
+    public Tester(IInterface @interface, int controllerAddress, VehicleProfile? profile = null)
     {
         _kwpCommon = new KwpCommon(@interface);
-        _kwp1281 = new KW1281Dialog(_kwpCommon);
+        _profileUnit = profile?.FindUnit(controllerAddress);
+        _kwp1281 = new KW1281Dialog(_kwpCommon, _profileUnit);
         _controllerAddress = controllerAddress;
     }
 
@@ -201,7 +204,8 @@ internal class Tester
                 Log.WriteLine("Fault codes:");
                 foreach (var faultCode in faultCodes)
                 {
-                    Log.WriteLine($"    {faultCode}");
+                    foreach (var line in DiagnosticFormatter.Fault(_profileUnit, faultCode))
+                        Log.WriteLine($"    {line}");
                 }
             }
         }
@@ -754,6 +758,11 @@ internal class Tester
         }
     }
 
+    public void Sensors(IReadOnlyList<SelectedMeasurement> selected, bool once)
+    {
+        _kwp1281.ReadSensors(selected, once);
+    }
+
     public void GroupRead(byte groupNumber)
     {
         var succeeded = _kwp1281.GroupRead(groupNumber);
@@ -995,7 +1004,8 @@ internal class Tester
             Log.WriteLine("Fault codes:");
             foreach (var faultCode in faultCodes)
             {
-                Log.WriteLine($"    {faultCode}");
+                foreach (var line in DiagnosticFormatter.Fault(_profileUnit, faultCode))
+                    Log.WriteLine($"    {line}");
             }
         }
     }

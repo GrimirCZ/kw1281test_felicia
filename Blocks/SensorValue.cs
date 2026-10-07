@@ -10,6 +10,9 @@ namespace BitFab.KW1281Test.Blocks
 
         public byte B { get; }
 
+        internal bool HasKnownFormula => SensorID is >= 1 and <= 36 or >= 38 and <= 70
+            or >= 0x80 and <= 0x8A or >= 0x8E and <= 0x92 or >= 0x94 and <= 0x99;
+
         public SensorValue(byte sensorID, byte a, byte b)
         {
             SensorID = sensorID;
@@ -92,6 +95,29 @@ namespace BitFab.KW1281Test.Blocks
                 68 => $"{((256 * A + B) / 7.365):F1} deg/s",
                 69 => $"{((256 * A + B) * 0.3254):F1} Bar",
                 70 => $"{((256 * A + B) * 0.192):F1} m/s\u00B2", // squared
+                // Formulas used by controllers that send a conversion header followed by raw bytes.
+                0x80 => $"{A * B} rpm",
+                0x81 => $"{(A * B / 256.0):F1} %",
+                0x82 => $"{(A * B / 2560.0):F3} A",
+                0x83 => $"{(A * B * 0.5 - 30):F1} Deg",
+                0x84 => $"{(A * B * 0.5):F1} Deg",
+                0x85 => $"{(A * B / 256.0):F2} V",
+                0x86 => $"{A * B} km/h",
+                0x87 => $"{A * B}",
+                0x88 => Convert.ToString(A & B, 2).PadLeft(8, '0'),
+                0x89 => $"{(A * B * 0.01):F2} ms",
+                0x8A => $"{(A * B * 0.001):F3} V",
+                0x8E => $"\"{(char)A}{(char)B}\"",
+                0x8F => $"{((B - 128) * A * 0.01):F1} Deg",
+                0x90 => $"{(A * B * 0.01):F2} l/h",
+                0x91 => $"{(A * B * 0.01):F2}",
+                0x92 => $"{(1 + (B - 128) * A * 0.0001):F3}",
+                0x94 => $"{((B - 128) * A * 0.25):F1}",
+                0x95 => $"{((B - 100) * A * 0.1):F1} °C",
+                0x96 => $"{((256 * B + A) / 180.0):F2} g/s",
+                0x97 => $"{((B - 128) * A * 0.01):F1} Deg k/w",
+                0x98 => $"{(A * B * 0.025):F2} mg/h",
+                0x99 => $"{((B - 128) * A / 255.0):F2} mg/h",
                 _ => $"({SensorID} {A} {B})",
             };
         }

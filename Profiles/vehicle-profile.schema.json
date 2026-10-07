@@ -1,0 +1,496 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "comment": {
+      "type": "string"
+    },
+    "fieldComments": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "vehicle": {
+      "type": "object"
+    },
+    "settings": {
+      "$ref": "#/$defs/settings"
+    },
+    "units": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/unit"
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "units"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "settings": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "baudRate": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "readFrom": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "group": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "position": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "group",
+        "position"
+      ],
+      "additionalProperties": false
+    },
+    "stringMap": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "measurement": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "label": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "readFrom": {
+          "$ref": "#/$defs/readFrom"
+        },
+        "applicability": {
+          "enum": [
+            "present",
+            "notFitted",
+            "disregard",
+            "unresolved"
+          ]
+        },
+        "includeInSensors": {
+          "type": "boolean"
+        },
+        "states": {
+          "$ref": "#/$defs/stringMap"
+        },
+        "raw": {
+          "$ref": "#/$defs/rawValue"
+        }
+      },
+      "required": [
+        "label",
+        "readFrom"
+      ],
+      "additionalProperties": false
+    },
+    "branch": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "patternProperties": {
+        "^(?!comment$|fieldComments$|all$)[A-Za-z_][A-Za-z0-9_]*$": {
+          "$ref": "#/$defs/node"
+        }
+      }
+    },
+    "node": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/measurement"
+        },
+        {
+          "$ref": "#/$defs/branch"
+        }
+      ]
+    },
+    "field": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "position": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "measurement": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "applicability": {
+          "enum": [
+            "present",
+            "notFitted",
+            "disregard",
+            "unresolved"
+          ]
+        },
+        "includeInSensors": {
+          "type": "boolean"
+        },
+        "raw": {
+          "$ref": "#/$defs/rawValue"
+        }
+      },
+      "required": [
+        "position"
+      ],
+      "additionalProperties": false
+    },
+    "groups": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "patternProperties": {
+        "^(0|[1-9][0-9]{0,2})$": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/field"
+          }
+        }
+      }
+    },
+    "variant": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "subtypes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 127
+          }
+        },
+        "failure": {
+          "type": "string"
+        },
+        "causes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "obdCode": {
+          "type": "string"
+        },
+        "obdMapping": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "failure"
+      ],
+      "additionalProperties": false
+    },
+    "dtc": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "component": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/variant"
+          }
+        }
+      },
+      "required": [
+        "component",
+        "description",
+        "variants"
+      ],
+      "additionalProperties": false
+    },
+    "dtcs": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[0-9]{5}$": {
+          "$ref": "#/$defs/dtc"
+        }
+      }
+    },
+    "unit": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "address": {
+          "type": "string",
+          "pattern": "^(0x)?[0-9A-Fa-f]{1,2}$"
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "present": {
+          "type": "boolean"
+        },
+        "baudRate": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "measurements": {
+          "$ref": "#/$defs/branch"
+        },
+        "groups": {
+          "$ref": "#/$defs/groups"
+        },
+        "dtcs": {
+          "$ref": "#/$defs/dtcs"
+        },
+        "rawGroupLengths": {
+          "$ref": "#/$defs/rawGroupLengths"
+        }
+      },
+      "required": [
+        "address"
+      ],
+      "additionalProperties": false
+    },
+    "rawBit": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "mask": {
+          "enum": [
+            1,
+            2,
+            4,
+            8,
+            16,
+            32,
+            64,
+            128
+          ]
+        },
+        "set": {
+          "type": "string",
+          "minLength": 1
+        },
+        "clear": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "mask",
+        "set"
+      ],
+      "additionalProperties": false
+    },
+    "rawValue": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "scale": {
+          "type": "number"
+        },
+        "offset": {
+          "type": "number"
+        },
+        "decimals": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "bits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rawBit"
+          }
+        },
+        "zero": {
+          "type": "string"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "rawGroupLengths": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "fieldComments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "patternProperties": {
+        "^(0|[1-9][0-9]{0,2})$": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 252
+        }
+      }
+    }
+  }
+}
