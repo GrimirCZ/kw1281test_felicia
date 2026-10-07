@@ -171,6 +171,29 @@ With a profile, `AutoScan` probes only controllers marked present. Explicit nume
 
 `ReadFaultCodes` keeps the original code and status line and adds explanations from the profile. When a subtype is unverified, it lists possible failure modes. P-code references are approximate equivalents where indicated. See [the references and open questions](docs/felicia-simos2p-evidence.md) for details that still need testing.
 
+### Serial byte dumps
+
+Use `--dump FILE` to record serial traffic before protocol decoding. This works with every command and does not require a profile. It captures every byte read or successfully written through the serial interface, including wakeup replies, cable echoes, acknowledgements, conversion headers and raw measurement payloads.
+
+```sh
+dotnet run -- ecu Sensors all --once --dump ./sensors.kwdump
+dotnet run -- ecu GroupRead 1 --dump ./group-1.kwdump
+```
+
+Set `KW1281TEST_DUMP` to a file path to enable the same capture through the environment. The command-line option overrides this variable. Relative paths use the current directory. Each run requires a new file path so earlier captures cannot be overwritten. `ProfileInfo` does not open the serial port or create a dump.
+
+```sh
+export KW1281TEST_DUMP="./felicia-$(date +%Y%m%d-%H%M%S).kwdump"
+dotnet run -- ecu Sensors all --once
+unset KW1281TEST_DUMP
+```
+
+The UTF-8 text file starts with a format version and UTC start time. Each subsequent line has four tab-separated fields: sequence number, elapsed microseconds, event kind and value. `RX` and `TX` values are two-digit hexadecimal bytes. Received cable echoes are included as `RX` entries. `BAUD`, `PARITY`, `BREAK`, `DTR` and `RTS` record successful configuration changes. `ERROR` records failed reads and writes, and `CLOSE` marks disposal of the port. Elapsed times describe when the tool completed each operation, rather than electrical timing on the K-line.
+
+The five-baud wakeup uses line breaks, so its bits appear as `BREAK` events rather than `TX` bytes. `CLEAR_RX` marks a receive-buffer purge. Bytes discarded by the driver during that purge are not available to the tool and cannot be captured. Writes are buffered and flushed during byte traffic about once per second, on a purge and when the port closes. Normal errors preserve the captured data, but forcibly terminating the process can lose the buffered tail. The usual `KW1281Test.log` remains available alongside the byte dump.
+
+For conversion debugging, send the `.kwdump` file from `Sensors all --once` together with the normal log. That supplies the ECU's conversion headers as well as the measurement bytes missing from earlier console exports.
+
 ### Linux serial-port permissions
 
 Run the tool as your own user. `sudo` commonly removes exported environment variables, including `KW1281TEST_PROFILE`, `KW1281TEST_PORT` and `KW1281TEST_BAUD_RATE`.
