@@ -143,7 +143,7 @@ Profiles add controller aliases, connection defaults, measurement names and DTC 
 ```sh
 export KW1281TEST_PROFILE=felicia-simos2p
 export KW1281TEST_PORT=/dev/ttyUSB0
-export KW1281TEST_BAUD_RATE=10400
+export KW1281TEST_BAUD_RATE=9600
 
 dotnet run -- ecu GroupRead 5
 dotnet run -- ecu Sensors engine --once
@@ -153,6 +153,8 @@ dotnet run -- ProfileInfo
 ```
 
 `--profile IDENTIFIER_OR_PATH` overrides `KW1281TEST_PROFILE`. Both accept an embedded identifier or a JSON file. Relative paths use the current directory. The tool checks the profile before opening the port. Without a profile, it uses the existing generic commands.
+
+The example uses 9600 baud, confirmed on a Felicia ECU identified as `047906030C SIMOS 2P 7002`. The built-in profile defaults to 10400 baud. Keep the environment override for a controller that communicates at 9600.
 
 Explicit positional connection arguments override environment defaults. Supported forms are `PORT BAUD ADDRESS COMMAND`, `PORT ADDRESS COMMAND` with a default baud, `BAUD ADDRESS COMMAND` with an environment port, and `ADDRESS COMMAND` with environment port and default baud. `BAUD=auto` uses the controller-specific profile rate, then the profile-wide rate. An omitted rate uses `KW1281TEST_BAUD_RATE`, then profile defaults. Addresses remain hexadecimal (`01`, `25`). Profile aliases such as `ecu`, `engine`, `immo` and `immobilizer` are case-insensitive. Use the full positional form if a port name is purely numeric.
 
@@ -166,6 +168,34 @@ dotnet run -- /dev/ttyUSB0 9600 25 ReadIdent --profile ./my-car.json
 With a profile, `AutoScan` probes only controllers marked present. Explicit numeric-address access and generic no-profile AutoScan remain available. A controller marked present may still reject a command or fail to communicate.
 
 `ReadFaultCodes` keeps the original code and status line and adds explanations from the profile. When a subtype is unverified, it lists possible failure modes. P-code references are approximate equivalents where indicated. See [the references and open questions](docs/felicia-simos2p-evidence.md) for details that still need testing.
+
+### Linux serial-port permissions
+
+Run the tool as your own user. `sudo` commonly removes exported environment variables, including `KW1281TEST_PROFILE`, `KW1281TEST_PORT` and `KW1281TEST_BAUD_RATE`.
+
+Connect the cable and check the device's group and your current group memberships:
+
+```sh
+ls -l /dev/ttyUSB0
+id -nG
+```
+
+Serial devices usually belong to `dialout` on Debian and Ubuntu, or `uucp` on Arch Linux. The device must allow its group to read and write. For a device owned by `dialout`, add your user to that group:
+
+```sh
+sudo usermod -aG dialout "$USER"
+```
+
+Use `uucp` instead if that is the device's group. Log out and log back in, or reboot, so the new group membership takes effect. Open a shell as your own user and run `id -nG` again to confirm membership. Export the connection variables again in the new session, or add their exports to your shell's startup file.
+
+Check profile selection without connecting to the car, then read the ECU identification without `sudo`:
+
+```sh
+dotnet run -- ProfileInfo
+dotnet run -- ecu ReadIdent
+```
+
+`ProfileInfo` should print `Profile: felicia-simos2p`. For a published executable, replace `dotnet run --` with `./kw1281test`. If the device already grants your user read and write access, no group change is needed.
 
 ### Extending a profile
 
