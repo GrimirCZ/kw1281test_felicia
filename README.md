@@ -165,6 +165,8 @@ dotnet run -- /dev/ttyUSB0 9600 25 ReadIdent --profile ./my-car.json
 
 `GroupRead` displays every returned value, including fields marked disregard/not fitted and unknown fields. Names come from the profile's group and field definitions. Existing formulas determine the values and units. `Sensors` reads enabled measurements for the car. Select a category such as `engine` or `fuel.lambda`, or a single value such as `engine.rpm` or `engine.temp`. `all` selects the complete enabled tree. Use commas to select several paths. Each measurement appears once, and shared groups are read once per sweep. Each sample has a UTC timestamp. Groups are read one after another. Use `--once` for one sweep, or Q/Ctrl+C to stop continuous sampling. Sensors never performs basic settings.
 
+Raw replies to numbered groups use the ECU's conversion header. The tool keeps each field's formula, coefficient and lookup table, then decodes the following bytes into values with units. `Sensors` keeps these headers between sweeps. Profile status definitions turn byte masks into labels such as `Idle`, `Idle switch closed`, `Sensor ready` and `Coolant below 80°C`. GroupRead shows one field per line in an interactive terminal and keeps each complete sample on one line in the log.
+
 With a profile, `AutoScan` probes only controllers marked present. Explicit numeric-address access and generic no-profile AutoScan remain available. A controller marked present may still reject a command or fail to communicate.
 
 `ReadFaultCodes` keeps the original code and status line and adds explanations from the profile. When a subtype is unverified, it lists possible failure modes. P-code references are approximate equivalents where indicated. See [the references and open questions](docs/felicia-simos2p-evidence.md) for details that still need testing.
@@ -197,6 +199,8 @@ dotnet run -- ecu ReadIdent
 
 `ProfileInfo` should print `Profile: felicia-simos2p`. For a published executable, replace `dotnet run --` with `./kw1281test`. If the device already grants your user read and write access, no group change is needed.
 
+On a Linux access-denied error, the tool prints a permission fix command. When the device group grants read and write access, the command adds your user to that group. If the group cannot be used, it suggests temporary access with `setfacl`, which is provided by the `acl` package on Debian and Ubuntu. Temporary access applies to the current device and may need to be granted again after reconnecting the cable.
+
 ### Extending a profile
 
 Start with [the built-in JSON](Profiles/felicia-simos2p.json) and [the schema](Profiles/vehicle-profile.schema.json). The loader also checks aliases, measurement references, duplicate subtypes and comment references. No additional package is needed, and the built-in profile is embedded in published executables.
@@ -221,6 +225,21 @@ Each controller has a nested `measurements` tree. A measurement supplies a label
 }
 ```
 
-New categories and measurements become selectable without code changes. Names cannot contain dots. The names `all`, `comment` and `fieldComments` are reserved. Use `applicability` (`present`, `notFitted`, `disregard`, `unresolved`) and `includeInSensors` to control Sensors inclusion. GroupRead never filters returned fields. Group 000 shows raw bytes where conversion is unverified. Raw and text responses to numbered groups keep their original display.
+New categories and measurements become selectable without code changes. Names cannot contain dots. The names `all`, `comment` and `fieldComments` are reserved. Use `applicability` (`present`, `notFitted`, `disregard`, `unresolved`) and `includeInSensors` to control Sensors inclusion. GroupRead never filters returned fields. Numbered raw groups use the ECU conversion header for their values and units. A missing or unsupported conversion stays visible with the field name and an explanation.
 
 Any definition object can contain `comment`. Primitive fields can be annotated through their containing object's `fieldComments`, for example `{"baudRate":10400,"fieldComments":{"baudRate":"Connection default"}}`. `ProfileInfo` prints all definitions and comments, including excluded fields. Comments are for the reader. Settings must have JSON values that the tool can read. Keep source references in separate documentation. A `states` map matches the existing decoder's exact output. Verify numeric DTC `subtypes` before adding them.
+
+A controller can declare `rawGroupLengths`, for example `{"0":10,"5":4}`, to validate raw field counts. A measurement or group field can define `raw.scale`, `raw.offset` and `raw.decimals` for a fixed byte conversion. The result is `byte * scale + offset`, displayed with the measurement's `unit`. A group-field definition overrides its measurement's raw definition. The Felicia profile uses these fixed scales only for group 000, which has no conversion header. ECU conversions take priority whenever a header is available.
+
+A measurement's `raw.bits` describes status masks. Each entry has a one-bit `mask`, text for `set`, and optional text for `clear`. `raw.zero` supplies text when no flags are displayed. Unknown bits remain visible. For example:
+
+```json
+{
+  "raw": {
+    "bits": [{ "mask": 4, "set": "Idle", "comment": "Operating-state bit" }],
+    "zero": "No operating mode reported"
+  }
+}
+```
+
+Raw definitions and their comments also appear in ProfileInfo. The profile loader validates field counts, finite scales, decimal precision and distinct bit masks before opening the port.
