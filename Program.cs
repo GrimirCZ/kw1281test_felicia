@@ -333,7 +333,12 @@ class Program
                 ?? throw new ArgumentException("Sensors requires a profile with measurements for the selected controller.");
         }
         using var dump = dumpSelection.Path == null ? null : new SerialByteDump(dumpSelection.Path);
-        if (dump != null) Log.WriteLine($"Serial byte dump: {Path.GetFullPath(dumpSelection.Path!)}");
+        if (dump != null)
+        {
+            dump.WriteSessionInfo(CommandAndArgs, args.Skip(3).ToArray(), portName, baudRate,
+                controllerAddress, profile?.Id, selection.Selector);
+            Log.WriteLine($"Serial byte dump: {Path.GetFullPath(dumpSelection.Path!)}");
+        }
         using var @interface = OpenPort(portName, baudRate, dump);
         var tester = new Tester(@interface, controllerAddress, profile);
         

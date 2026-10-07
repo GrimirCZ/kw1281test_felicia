@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.IO.Ports;
+using System.Linq;
 using System.Text;
+using System.Text.Json;
 
 namespace BitFab.KW1281Test.Interface;
 
@@ -26,6 +29,26 @@ internal sealed class SerialByteDump : IDisposable
         _writer.WriteLine("# sequence\telapsed_us\tkind\tvalue");
         _writer.Flush();
     }
+
+    internal void WriteSessionInfo(IReadOnlyList<string> commandLine, IReadOnlyList<string> command,
+        string port, int baudRate, int controllerAddress, string? profileId, string? profileSource)
+    {
+        lock (_gate)
+        {
+            _writer.WriteLine($"# Command line: {QuoteArguments(commandLine)}");
+            _writer.WriteLine($"# Command: {QuoteArguments(command)}");
+            _writer.WriteLine($"# Working directory: {Quote(Environment.CurrentDirectory)}");
+            _writer.WriteLine($"# Port: {Quote(port)}");
+            _writer.WriteLine(FormattableString.Invariant($"# Initial baud rate: {baudRate}"));
+            _writer.WriteLine(FormattableString.Invariant($"# Initial controller address: 0x{controllerAddress:X2}"));
+            _writer.WriteLine($"# Profile: {(profileId == null ? "none" : Quote(profileId))}");
+            _writer.WriteLine($"# Profile source: {(profileSource == null ? "none" : Quote(profileSource))}");
+            _writer.Flush();
+        }
+    }
+
+    private static string Quote(string value) => $"\"{JsonEncodedText.Encode(value)}\"";
+    private static string QuoteArguments(IReadOnlyList<string> args) => $"[{string.Join(", ", args.Select(Quote))}]";
 
     private static TextWriter OpenFile(string path)
     {

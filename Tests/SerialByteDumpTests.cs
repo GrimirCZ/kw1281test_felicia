@@ -1,12 +1,44 @@
 using BitFab.KW1281Test.Interface;
 using System.Globalization;
 using System.IO.Ports;
+using System.Text.Json;
 
 namespace BitFab.KW1281Test.Tests;
 
 [TestClass]
 public class SerialByteDumpTests
 {
+    [TestMethod]
+    public void SessionInfo_PreservesArgumentBoundariesAndProfileSourceWithoutCreatingDataRecords()
+    {
+        string source = "C:\\profiles\\my \"car\"\n.json";
+        string[] commandLine = ["kw1281test", "ecu", "Sensors", "engine", "--profile", source];
+        string[] command = ["Sensors", "engine"];
+        using var output = new StringWriter();
+        using (var dump = new SerialByteDump(output))
+            dump.WriteSessionInfo(commandLine, command, "/dev/serial/by-id/cable with spaces", 9600, 0x25, "custom-profile", source);
+        string text = output.ToString();
+        using var original = JsonDocument.Parse(Metadata(text, "Command line"));
+        CollectionAssert.AreEqual(commandLine, original.RootElement.EnumerateArray().Select(x => x.GetString()).ToArray());
+        using var selected = JsonDocument.Parse(Metadata(text, "Command"));
+        CollectionAssert.AreEqual(command, selected.RootElement.EnumerateArray().Select(x => x.GetString()).ToArray());
+        using var profileSource = JsonDocument.Parse(Metadata(text, "Profile source"));
+        Assert.AreEqual(source, profileSource.RootElement.GetString());
+        using var profile = JsonDocument.Parse(Metadata(text, "Profile"));
+        Assert.AreEqual("custom-profile", profile.RootElement.GetString());
+        using var port = JsonDocument.Parse(Metadata(text, "Port"));
+        Assert.AreEqual("/dev/serial/by-id/cable with spaces", port.RootElement.GetString());
+        Assert.AreEqual("9600", Metadata(text, "Initial baud rate"));
+        Assert.AreEqual("0x25", Metadata(text, "Initial controller address"));
+        Assert.AreEqual(0, Records(text).Length);
+
+        using var generic = new StringWriter();
+        using (var dump = new SerialByteDump(generic))
+            dump.WriteSessionInfo(["kw1281test", "01", "ReadIdent"], ["ReadIdent"], "/dev/ttyUSB0", 9600, 1, null, null);
+        Assert.AreEqual("none", Metadata(generic.ToString(), "Profile"));
+        Assert.AreEqual("none", Metadata(generic.ToString(), "Profile source"));
+    }
+
     [TestMethod]
     public void Options_OverrideEnvironmentAndPreserveProfileAndCommandArguments()
     {
@@ -95,6 +127,8 @@ public class SerialByteDumpTests
             using (var dump = new SerialByteDump(path))
             using (var capture = dump.Wrap(new FakeInterface([0x02, 0xF4]), 9600))
             {
+                dump.WriteSessionInfo(["kw1281test", "ecu", "Sensors", "all", "--once"],
+                    ["Sensors", "all", "--once"], "/dev/ttyUSB0", 9600, 1, "felicia-simos2p", "felicia-simos2p");
                 capture.ReadByte();
                 capture.ReadByte();
                 Assert.ThrowsExactly<TimeoutException>(() => capture.ReadByte());
@@ -107,12 +141,21 @@ public class SerialByteDumpTests
             Assert.IsTrue(original.Contains("\tCLOSE\t"));
             using (var dump = new SerialByteDump(path))
             using (var capture = dump.Wrap(new FakeInterface([0x55]), 10400))
+            {
+                dump.WriteSessionInfo(["kw1281test", "ecu", "GroupRead", "1"], ["GroupRead", "1"],
+                    "/dev/ttyUSB0", 10400, 1, "custom-profile", "./my-car.json");
                 Assert.AreEqual((byte)0x55, capture.ReadByte());
+            }
             string combined = File.ReadAllText(path);
             Assert.IsTrue(combined.StartsWith(original, StringComparison.Ordinal));
             string nextSession = combined[original.Length..];
             Assert.IsTrue(nextSession.Contains("# KW1281TEST byte dump v1"));
             Assert.IsTrue(nextSession.Contains("# UTC start "));
+            Assert.AreEqual("\"felicia-simos2p\"", Metadata(original, "Profile"));
+            Assert.AreEqual("\"custom-profile\"", Metadata(nextSession, "Profile"));
+            Assert.AreEqual("\"./my-car.json\"", Metadata(nextSession, "Profile source"));
+            using var selected = JsonDocument.Parse(Metadata(nextSession, "Command"));
+            CollectionAssert.AreEqual(new[] { "GroupRead", "1" }, selected.RootElement.EnumerateArray().Select(x => x.GetString()).ToArray());
             var records = Records(nextSession);
             Assert.AreEqual("1", records[0][0]);
             Assert.AreEqual("BAUD", records[0][2]);
@@ -146,6 +189,12 @@ public class SerialByteDumpTests
 
     private static string[][] Records(string text) => text.Split('\n')
         .Select(x => x.TrimEnd('\r')).Where(x => x.Length > 0 && !x.StartsWith('#')).Select(x => x.Split('\t')).ToArray();
+
+    private static string Metadata(string text, string name)
+    {
+        string prefix = $"# {name}: ";
+        return text.Split('\n').Select(x => x.TrimEnd('\r')).Single(x => x.StartsWith(prefix, StringComparison.Ordinal))[prefix.Length..];
+    }
 
     private sealed class FakeInterface(byte[] incoming) : IInterface
     {
