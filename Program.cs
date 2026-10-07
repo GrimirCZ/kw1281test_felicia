@@ -689,7 +689,7 @@ class Program
 Usage: KW1281Test PORT BAUD ADDRESS COMMAND [args]
                 
 Profiles: --profile IDENTIFIER_OR_PATH overrides KW1281TEST_PROFILE.
-Byte capture: --dump FILE overrides KW1281TEST_DUMP. Use a new file path.
+Byte capture: --dump FILE overrides KW1281TEST_DUMP. Sessions append to FILE.
 Connection defaults: KW1281TEST_PORT and KW1281TEST_BAUD_RATE allow
     KW1281Test ADDRESS COMMAND [args]. Explicit positional values win.
 BAUD may be auto with a profile; ADDRESS may be a profile alias (ecu, immo).

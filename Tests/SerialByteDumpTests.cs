@@ -87,7 +87,7 @@ public class SerialByteDumpTests
     }
 
     [TestMethod]
-    public void CaptureFile_FlushesOnFailureAndRefusesToOverwriteExistingData()
+    public void CaptureFile_FlushesOnFailureAndAppendsAnotherSessionWithoutChangingEarlierData()
     {
         string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.kwdump");
         try
@@ -105,14 +105,47 @@ public class SerialByteDumpTests
             Assert.IsTrue(original.Contains("\tRX\tF4"));
             Assert.IsTrue(original.Contains("\tERROR\tRX TimeoutException"));
             Assert.IsTrue(original.Contains("\tCLOSE\t"));
-            Assert.ThrowsExactly<IOException>(() => new SerialByteDump(path));
-            Assert.AreEqual(original, File.ReadAllText(path));
+            using (var dump = new SerialByteDump(path))
+            using (var capture = dump.Wrap(new FakeInterface([0x55]), 10400))
+                Assert.AreEqual((byte)0x55, capture.ReadByte());
+            string combined = File.ReadAllText(path);
+            Assert.IsTrue(combined.StartsWith(original, StringComparison.Ordinal));
+            string nextSession = combined[original.Length..];
+            Assert.IsTrue(nextSession.Contains("# KW1281TEST byte dump v1"));
+            Assert.IsTrue(nextSession.Contains("# UTC start "));
+            var records = Records(nextSession);
+            Assert.AreEqual("1", records[0][0]);
+            Assert.AreEqual("BAUD", records[0][2]);
+            Assert.AreEqual("10400", records[0][3]);
+            Assert.AreEqual("RX", records[1][2]);
+            Assert.AreEqual("55", records[1][3]);
+            Assert.AreEqual("CLOSE", records[2][2]);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [TestMethod]
+    public void CaptureFile_AppendsHeaderOnANewLineAfterAnInterruptedSession()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.kwdump");
+        const string interrupted = "# KW1281TEST byte dump v1\n1\t42\tRX\t02";
+        try
+        {
+            File.WriteAllText(path, interrupted);
+            using (var dump = new SerialByteDump(path))
+            using (var capture = dump.Wrap(new FakeInterface([0xF4]), 9600))
+                capture.ReadByte();
+            string combined = File.ReadAllText(path);
+            Assert.IsTrue(combined.StartsWith(interrupted + Environment.NewLine + "# KW1281TEST byte dump v1", StringComparison.Ordinal));
+            var records = Records(combined);
+            Assert.AreEqual("02", records[0][3]);
+            Assert.AreEqual("F4", records[2][3]);
         }
         finally { File.Delete(path); }
     }
 
     private static string[][] Records(string text) => text.Split('\n')
-        .Where(x => x.Length > 0 && !x.StartsWith('#')).Select(x => x.TrimEnd('\r').Split('\t')).ToArray();
+        .Select(x => x.TrimEnd('\r')).Where(x => x.Length > 0 && !x.StartsWith('#')).Select(x => x.Split('\t')).ToArray();
 
     private sealed class FakeInterface(byte[] incoming) : IInterface
     {

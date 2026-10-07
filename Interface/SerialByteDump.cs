@@ -31,12 +31,16 @@ internal sealed class SerialByteDump : IDisposable
     {
         try
         {
-            return new StreamWriter(new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read),
+            var stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read);
+            var writer = new StreamWriter(stream,
                 new UTF8Encoding(false), 65536);
+            // Separate sessions even when an interrupted capture left an unfinished line.
+            if (stream.Length > 0) writer.WriteLine();
+            return writer;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            throw new IOException($"Unable to create byte dump '{path}': {ex.Message} Choose a new file path if it already exists.", ex);
+            throw new IOException($"Unable to append to byte dump '{path}': {ex.Message}", ex);
         }
     }
 
