@@ -80,7 +80,8 @@ class Program
         Log.WriteLine($".NET Version: {Environment.Version}");
         Log.WriteLine($"Culture: {CultureInfo.InstalledUICulture}");
 
-        var selection = VehicleProfile.ExtractOption(args, Environment.GetEnvironmentVariable(VehicleProfile.EnvironmentVariable));
+        var dumpSelection = ByteDumpOptions.Extract(args, Environment.GetEnvironmentVariable(ByteDumpOptions.EnvironmentVariable));
+        var selection = VehicleProfile.ExtractOption(dumpSelection.Arguments, Environment.GetEnvironmentVariable(VehicleProfile.EnvironmentVariable));
         args = selection.Arguments;
         if (args.Length > 0 && args[0].Equals("ProfileInfo", StringComparison.OrdinalIgnoreCase))
         {
@@ -331,7 +332,9 @@ class Program
             sensors = profile?.FindUnit(controllerAddress)?.Select(args[4])
                 ?? throw new ArgumentException("Sensors requires a profile with measurements for the selected controller.");
         }
-        using var @interface = OpenPort(portName, baudRate);
+        using var dump = dumpSelection.Path == null ? null : new SerialByteDump(dumpSelection.Path);
+        if (dump != null) Log.WriteLine($"Serial byte dump: {Path.GetFullPath(dumpSelection.Path!)}");
+        using var @interface = OpenPort(portName, baudRate, dump);
         var tester = new Tester(@interface, controllerAddress, profile);
         
         switch (command.ToLower())
@@ -629,7 +632,7 @@ class Program
     /// </param>
     /// <param name="baudRate"></param>
     /// <returns></returns>
-    private static IInterface OpenPort(string portName, int baudRate)
+    private static IInterface OpenPort(string portName, int baudRate, SerialByteDump? dump = null)
     {
         try
         {
@@ -651,6 +654,8 @@ class Program
                 Log.WriteLine($"Opening Generic serial port {portName}");
                 @interface = new GenericInterface(portName, baudRate);
             }
+
+            if (dump != null) @interface = dump.Wrap(@interface, baudRate);
 
             // Many KKL cables power/enable their K-line transceiver off the DTR line.
             // Pulse it low then high so the transceiver gets a clean power-on reset
@@ -684,6 +689,7 @@ class Program
 Usage: KW1281Test PORT BAUD ADDRESS COMMAND [args]
                 
 Profiles: --profile IDENTIFIER_OR_PATH overrides KW1281TEST_PROFILE.
+Byte capture: --dump FILE overrides KW1281TEST_DUMP. Use a new file path.
 Connection defaults: KW1281TEST_PORT and KW1281TEST_BAUD_RATE allow
     KW1281Test ADDRESS COMMAND [args]. Explicit positional values win.
 BAUD may be auto with a profile; ADDRESS may be a profile alias (ecu, immo).
