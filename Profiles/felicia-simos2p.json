@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "felicia-simos2p",
-  "comment": "Felicia 1.3 MPI 50 kW, 1999, four injectors, A/C and immobilizer. Connection and wire-status details still need vehicle confirmation.",
+  "comment": "Felicia 1.3 MPI 50 kW, 1999, four injectors, A/C and immobilizer. Numbered raw measurements use the ECU conversion header. Remaining uncertainties are annotated on the affected fields.",
   "vehicle": {
     "model": "Skoda Felicia hatchback",
     "year": 1999,
@@ -57,7 +57,43 @@
               "position": 4
             },
             "includeInSensors": true,
-            "comment": "Raw status word for compressor, idle switch, lambda and temperature conditions. The bit layout still needs testing."
+            "comment": "Status bits are decoded from the ECU byte mask. Unknown bits remain visible.",
+            "raw": {
+              "bits": [
+                {
+                  "mask": 128,
+                  "set": "Diagnostic fault affecting throttle adjustment"
+                },
+                {
+                  "mask": 32,
+                  "set": "A/C compressor on",
+                  "clear": "A/C compressor off"
+                },
+                {
+                  "mask": 16,
+                  "set": "Idle switch closed",
+                  "clear": "Idle switch open"
+                },
+                {
+                  "mask": 8,
+                  "set": "Lambda regulation fault"
+                },
+                {
+                  "mask": 4,
+                  "set": "Throttle control not closed"
+                },
+                {
+                  "mask": 2,
+                  "set": "Engine running",
+                  "clear": "Engine stopped"
+                },
+                {
+                  "mask": 1,
+                  "set": "Coolant below 80°C",
+                  "clear": "Coolant at least 80°C"
+                }
+              ]
+            }
           },
           "state": {
             "label": "Engine operating state",
@@ -66,7 +102,28 @@
               "position": 4
             },
             "includeInSensors": true,
-            "comment": "Raw status word: deceleration, idle, partial load and full load. Exact bit-to-wire layout needs confirmation."
+            "comment": "Status bits are decoded from the ECU byte mask. Unknown bits remain visible.",
+            "raw": {
+              "bits": [
+                {
+                  "mask": 8,
+                  "set": "Deceleration"
+                },
+                {
+                  "mask": 4,
+                  "set": "Idle"
+                },
+                {
+                  "mask": 2,
+                  "set": "Partial load"
+                },
+                {
+                  "mask": 1,
+                  "set": "Full load"
+                }
+              ],
+              "zero": "No operating mode reported"
+            }
           },
           "idle": {
             "targetRpm": {
@@ -117,8 +174,8 @@
               "position": 4
             },
             "includeInSensors": true,
-            "unit": "raw",
-            "comment": "Raw value from group 000. Conversion to physical pressure still needs testing."
+            "unit": "kPa",
+            "comment": "Pressure is available only when group 000 returns its ten measurement bytes."
           },
           "throttle": {
             "angle": {
@@ -146,7 +203,28 @@
                 "position": 2
               },
               "includeInSensors": true,
-              "comment": "Throttle control status includes adaptation errors, an unpowered drive, cancellation due to low voltage and the idle switch. The bit layout still needs testing."
+              "comment": "Status bits are decoded from the ECU byte mask. Unknown bits remain visible.",
+              "raw": {
+                "bits": [
+                  {
+                    "mask": 8,
+                    "set": "Throttle adaptation error"
+                  },
+                  {
+                    "mask": 4,
+                    "set": "Throttle drive unpowered"
+                  },
+                  {
+                    "mask": 2,
+                    "set": "Throttle adaptation cancelled by low battery voltage"
+                  },
+                  {
+                    "mask": 1,
+                    "set": "Idle switch open"
+                  }
+                ],
+                "zero": "No throttle control flags"
+              }
             },
             "voltage": {
               "label": "Throttle potentiometer voltage",
@@ -232,7 +310,38 @@
                 "position": 4
               },
               "includeInSensors": true,
-              "comment": "Raw status word: fault stored, dynamic restriction, regulation limit, regulation active, sensor ready and mixture. Wire bit layout needs confirmation."
+              "comment": "The mixture-bit direction still needs confirmation. Other flags show the stored-fault, dynamic-range, limit, active and ready states.",
+              "raw": {
+                "bits": [
+                  {
+                    "mask": 128,
+                    "set": "Fault stored"
+                  },
+                  {
+                    "mask": 16,
+                    "set": "Reduced dynamic range"
+                  },
+                  {
+                    "mask": 8,
+                    "set": "Regulation limit reached"
+                  },
+                  {
+                    "mask": 4,
+                    "set": "Regulation active",
+                    "clear": "Regulation inactive"
+                  },
+                  {
+                    "mask": 2,
+                    "set": "Sensor ready",
+                    "clear": "Sensor not ready"
+                  },
+                  {
+                    "mask": 1,
+                    "set": "Mixture flag 1 (interpretation pending)",
+                    "clear": "Mixture flag 0 (interpretation pending)"
+                  }
+                ]
+              }
             }
           },
           "evap": {
@@ -261,7 +370,40 @@
                 "position": 4
               },
               "includeInSensors": true,
-              "comment": "Raw status word. Decoding the active modes requires a verified bit layout."
+              "comment": "Status bits are decoded from the ECU byte mask. Unknown bits remain visible.",
+              "raw": {
+                "bits": [
+                  {
+                    "mask": 64,
+                    "set": "Estimating canister loading"
+                  },
+                  {
+                    "mask": 32,
+                    "set": "Minimum purge mode requested"
+                  },
+                  {
+                    "mask": 16,
+                    "set": "Purge valve closure requested"
+                  },
+                  {
+                    "mask": 8,
+                    "set": "Canister loading measurement"
+                  },
+                  {
+                    "mask": 4,
+                    "set": "Normal purge operation"
+                  },
+                  {
+                    "mask": 2,
+                    "set": "Minimum purge operation"
+                  },
+                  {
+                    "mask": 1,
+                    "set": "Purge valve closed"
+                  }
+                ],
+                "zero": "No purge mode flags"
+              }
             }
           }
         },
@@ -401,7 +543,7 @@
               },
               "includeInSensors": true,
               "unit": "V",
-              "comment": "The 5 V endpoint may be displayed as 0 V. Keep the displayed value."
+              "comment": "Some controllers display the 5 V endpoint as 0 V. Do not infer a broken sensor from that value alone."
             },
             "throttleUpperVoltage": {
               "label": "Throttle potentiometer voltage at upper limit",
@@ -429,7 +571,21 @@
               "position": 4
             },
             "includeInSensors": true,
-            "comment": "Raw two-position status word. Sensors only reads the value and does not start basic settings."
+            "comment": "Reading this status does not start throttle adaptation.",
+            "raw": {
+              "bits": [
+                {
+                  "mask": 2,
+                  "set": "Adaptation error",
+                  "clear": "No adaptation error"
+                },
+                {
+                  "mask": 1,
+                  "set": "Adaptation running",
+                  "clear": "Adaptation inactive"
+                }
+              ]
+            }
           }
         }
       },
@@ -437,23 +593,53 @@
         "0": [
           {
             "position": 1,
-            "measurement": "intake.temp"
+            "measurement": "intake.temp",
+            "raw": {
+              "scale": 0.75,
+              "offset": -48,
+              "decimals": 1,
+              "comment": "Fixed group 000 conversion. Numbered groups use the ECU conversion header instead."
+            }
           },
           {
             "position": 2,
-            "measurement": "electrical.voltage"
+            "measurement": "electrical.voltage",
+            "raw": {
+              "scale": 0.1,
+              "offset": 0,
+              "decimals": 1,
+              "comment": "Fixed group 000 conversion. Numbered groups use the ECU conversion header instead."
+            }
           },
           {
             "position": 3,
-            "measurement": "engine.temp"
+            "measurement": "engine.temp",
+            "raw": {
+              "scale": 0.75,
+              "offset": -48,
+              "decimals": 1,
+              "comment": "Fixed group 000 conversion. Numbered groups use the ECU conversion header instead."
+            }
           },
           {
             "position": 4,
-            "measurement": "intake.pressure"
+            "measurement": "intake.pressure",
+            "raw": {
+              "scale": 0.5,
+              "offset": 0,
+              "decimals": 1,
+              "comment": "Fixed group 000 conversion. Numbered groups use the ECU conversion header instead."
+            }
           },
           {
             "position": 5,
-            "measurement": "fuel.lambda.voltage"
+            "measurement": "fuel.lambda.voltage",
+            "raw": {
+              "scale": 0.02,
+              "offset": 0,
+              "decimals": 2,
+              "comment": "Fixed group 000 conversion. Numbered groups use the ECU conversion header instead."
+            }
           },
           {
             "position": 6,
@@ -465,15 +651,33 @@
           },
           {
             "position": 8,
-            "measurement": "intake.throttle.angle"
+            "measurement": "intake.throttle.angle",
+            "raw": {
+              "scale": 0.5,
+              "offset": 0,
+              "decimals": 1,
+              "comment": "Fixed group 000 conversion. Numbered groups use the ECU conversion header instead."
+            }
           },
           {
             "position": 9,
-            "measurement": "fuel.injection.duration"
+            "measurement": "fuel.injection.duration",
+            "raw": {
+              "scale": 1.02,
+              "offset": 0,
+              "decimals": 2,
+              "comment": "Fixed group 000 conversion. Numbered groups use the ECU conversion header instead."
+            }
           },
           {
             "position": 10,
-            "measurement": "engine.rpm"
+            "measurement": "engine.rpm",
+            "raw": {
+              "scale": 32,
+              "offset": 0,
+              "decimals": 0,
+              "comment": "Fixed group 000 conversion. Numbered groups use the ECU conversion header instead."
+            }
           }
         ],
         "1": [
@@ -2083,6 +2287,33 @@
             }
           ]
         }
+      },
+      "rawGroupLengths": {
+        "0": 10,
+        "1": 4,
+        "2": 4,
+        "3": 4,
+        "4": 4,
+        "5": 4,
+        "6": 4,
+        "7": 4,
+        "8": 4,
+        "9": 4,
+        "10": 4,
+        "11": 4,
+        "12": 4,
+        "15": 4,
+        "16": 4,
+        "17": 4,
+        "19": 4,
+        "20": 4,
+        "21": 4,
+        "97": 4,
+        "98": 4,
+        "99": 4
+      },
+      "fieldComments": {
+        "rawGroupLengths": "Expected raw field counts. Numbered groups use conversion headers provided by the ECU."
       }
     },
     {

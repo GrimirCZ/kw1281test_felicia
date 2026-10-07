@@ -768,6 +768,7 @@ internal class KW1281Dialog : IKW1281Dialog
 
         GroupReadResponseWithTextBlock? textBlock = null;
         byte textGroup = groupNumber;
+        _profileOverlayRows = 0;
 
         Log.WriteLine("[Up arrow | Down arrow | Q to quit]", LogDest.Console);
         while (true)
@@ -818,7 +819,12 @@ internal class KW1281Dialog : IKW1281Dialog
             }
             else if (responseBlock is RawDataReadResponseBlock rawData)
             {
-                if (textBlock != null && rawData.Body.Count > 0)
+                if (_profileUnit != null)
+                {
+                    rawData.MeasurementHeader = textBlock;
+                    Overlay($"Group {groupNumber:D3}: {DiagnosticFormatter.Group(_profileUnit, groupNumber, rawData)}");
+                }
+                else if (textBlock != null && rawData.Body.Count > 0)
                 {
                     var sb = new StringBuilder($"Group {groupNumber:D3}: ");
                     sb.Append(textBlock.GetText(rawData.Body[0]));
@@ -843,6 +849,8 @@ internal class KW1281Dialog : IKW1281Dialog
 
     public void ReadSensors(IReadOnlyList<SelectedMeasurement> selected, bool once)
     {
+        if (_profileUnit == null) throw new InvalidOperationException("Sensors requires a controller profile.");
+        var headers = new Dictionary<byte, GroupReadResponseWithTextBlock>();
         using var cancellation = new CancellationTokenSource();
         ConsoleCancelEventHandler cancel = (_, e) => { e.Cancel = true; cancellation.Cancel(); };
         Console.CancelKeyPress += cancel;
@@ -851,8 +859,10 @@ internal class KW1281Dialog : IKW1281Dialog
             Log.WriteLine("Sensors: sequential group samples with UTC timestamps. Q or Ctrl+C to stop.");
             do
             {
-                MeasurementReader.Sweep(selected,
-                    group => MeasurementReader.Read(group, SendBlock, ReceiveBlock),
+                MeasurementReader.Sweep(_profileUnit, selected,
+                    group => MeasurementReader.Read(group, SendBlock, ReceiveBlock,
+                        header => { headers[group] = header; Log.WriteLine(header.ToString(), LogDest.File); },
+                        header: headers.GetValueOrDefault(group)),
                     line => Log.WriteLine(line), () => cancellation.IsCancellationRequested);
                 if (once || cancellation.IsCancellationRequested) break;
                 if (!Console.IsInputRedirected && Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Q) break;
@@ -866,6 +876,7 @@ internal class KW1281Dialog : IKW1281Dialog
 
     private bool RawDataRead(bool useBasicSetting)
     {
+        _profileOverlayRows = 0;
         if (useBasicSetting)
         {
             Log.WriteLine($"Sending Basic Setting Raw Data Read block");
@@ -926,11 +937,20 @@ internal class KW1281Dialog : IKW1281Dialog
     /// Erase the current console line and replace it with message.
     /// Also writes the message to the log.
     /// </summary>
-    private static void Overlay(string message)
+    private int _profileOverlayRows;
+    private int _profileOverlayWidth;
+
+    private void Overlay(string message)
     {
         if (Console.IsOutputRedirected)
         {
             Log.WriteLine(message);
+            return;
+        }
+        if (_profileUnit != null)
+        {
+            OverlayProfile(message);
+            Log.WriteLine(message, LogDest.File);
             return;
         }
         (int left, int top) = Console.GetCursorPosition();
@@ -942,6 +962,41 @@ internal class KW1281Dialog : IKW1281Dialog
         }
         Log.Write(message, LogDest.Console);
         Log.WriteLine(message, LogDest.File);
+    }
+
+    private void OverlayProfile(string message)
+    {
+        int width = Math.Max(1, Console.WindowWidth - 1);
+        string display = message.Replace(" | ", Environment.NewLine + "  ");
+        var rows = new List<string>();
+        foreach (string line in display.Split(Environment.NewLine))
+        {
+            if (line.Length == 0) rows.Add("");
+            for (int offset = 0; offset < line.Length; offset += width)
+                rows.Add(line.Substring(offset, Math.Min(width, line.Length - offset)));
+        }
+        if (rows.Count >= Console.WindowHeight)
+        {
+            Log.WriteLine(display, LogDest.Console);
+            _profileOverlayRows = 0;
+            return;
+        }
+        if (_profileOverlayWidth != width)
+        {
+            if (_profileOverlayRows > 0) Log.WriteLine(LogDest.Console);
+            _profileOverlayRows = 0;
+            _profileOverlayWidth = width;
+        }
+        int height = Math.Max(rows.Count, _profileOverlayRows);
+        int extraRows = _profileOverlayRows == 0 ? height - 1 : height - _profileOverlayRows;
+        if (extraRows > 0) Log.Write(new string('\n', extraRows), LogDest.Console);
+        int top = Console.GetCursorPosition().Top - height + 1;
+        for (int row = 0; row < height; row++)
+        {
+            Console.SetCursorPosition(0, Math.Max(0, top + row));
+            Log.Write((row < rows.Count ? rows[row] : "").PadRight(width), LogDest.Console);
+        }
+        _profileOverlayRows = height;
     }
 
     private static class TimeInterval

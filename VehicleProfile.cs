@@ -122,7 +122,7 @@ internal sealed class VehicleProfile
         var aliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var unit in Units)
         {
-            if (unit == null || !addresses.Add(unit.NumericAddress) || unit.BaudRate is <= 0 || unit.Aliases == null || unit.Groups == null || unit.Measurements == null || unit.Dtcs == null)
+            if (unit == null || !addresses.Add(unit.NumericAddress) || unit.BaudRate is <= 0 || unit.Aliases == null || unit.Groups == null || unit.Measurements == null || unit.Dtcs == null || unit.RawGroupLengths == null)
                 throw new ArgumentException("Units require distinct addresses, valid baud rates and non-null collections.");
             foreach (string alias in unit.Aliases)
                 if (string.IsNullOrWhiteSpace(alias) || int.TryParse(alias.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? alias[2..] : alias, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _) || !aliases.Add(alias))
@@ -140,6 +140,7 @@ internal sealed class VehicleProfile
                         throw new ArgumentException($"Invalid or duplicate field position in group {group}.");
                     if (field.Measurement != null && !measurements.ContainsKey(field.Measurement))
                         throw new ArgumentException($"Unknown measurement reference: {field.Measurement}.");
+                    ValidateRawValue(field.Raw);
                 }
             }
             foreach (var (path, measurement) in measurements)
@@ -150,7 +151,11 @@ internal sealed class VehicleProfile
                 if (field?.Measurement != path)
                     throw new ArgumentException($"Canonical readFrom for {path} must reference a group field with that measurement path.");
                 ValidateApplicability(measurement.Applicability);
+                ValidateRawValue(measurement.Raw);
             }
+            foreach (var (group, count) in unit.RawGroupLengths)
+                if (!unit.Groups.ContainsKey(group) || count is < 1 or > 252 || unit.Groups[group].Any(x => x.Position > count))
+                    throw new ArgumentException($"Invalid raw field count for group {group}.");
             foreach (var field in unit.Groups.Values.SelectMany(x => x)) ValidateApplicability(field.Applicability);
             foreach (var (code, dtc) in unit.Dtcs)
             {
@@ -172,6 +177,19 @@ internal sealed class VehicleProfile
     {
         if (applicability is not ("present" or "notFitted" or "disregard" or "unresolved"))
             throw new ArgumentException($"Unknown applicability: {applicability}.");
+    }
+
+    private static void ValidateRawValue(RawValueDefinition? raw)
+    {
+        if (raw == null) return;
+        if (raw.Decimals is < 0 or > 6 || raw.Bits == null || !double.IsFinite(raw.Offset) ||
+            (raw.Scale.HasValue && (!double.IsFinite(raw.Scale.Value) || raw.Bits.Count > 0)))
+            throw new ArgumentException("Raw values require finite scales and offsets, 0 to 6 decimals, and either a scale or bit definitions.");
+        var masks = new HashSet<int>();
+        foreach (var bit in raw.Bits)
+            if (bit == null || bit.Mask is < 1 or > 128 || (bit.Mask & (bit.Mask - 1)) != 0 ||
+                !masks.Add(bit.Mask) || string.IsNullOrWhiteSpace(bit.Set))
+                throw new ArgumentException("Raw bits require distinct one-bit byte masks and a set label.");
     }
 
     internal ProfileUnit? FindUnit(int address) => Units.FirstOrDefault(x => x.NumericAddress == address);
@@ -260,11 +278,14 @@ internal sealed class ProfileUnit
     public int? BaudRate { get; set; }
     public Dictionary<string, JsonElement> Measurements { get; set; } = [];
     public Dictionary<string, List<GroupField>> Groups { get; set; } = [];
+    public Dictionary<string, int> RawGroupLengths { get; set; } = [];
     public Dictionary<string, DtcDefinition> Dtcs { get; set; } = [];
     [JsonIgnore] public int NumericAddress => VehicleProfile.ParseAddress(Address);
 
     internal GroupField? FindField(int group, int position) =>
         Groups.GetValueOrDefault(group.ToString(CultureInfo.InvariantCulture))?.FirstOrDefault(x => x.Position == position);
+
+    internal int? RawGroupLength(int group) => RawGroupLengths.TryGetValue(group.ToString(CultureInfo.InvariantCulture), out int count) ? count : null;
 
     internal Dictionary<string, MeasurementDefinition> GetMeasurements()
     {
@@ -344,6 +365,7 @@ internal sealed class MeasurementDefinition
     public string Applicability { get; set; } = "present";
     public bool IncludeInSensors { get; set; } = true;
     public Dictionary<string, string> States { get; set; } = [];
+    public RawValueDefinition? Raw { get; set; }
 }
 
 internal sealed class GroupReference
@@ -359,6 +381,23 @@ internal sealed class GroupField
     public string? Measurement { get; set; }
     public string? Label { get; set; }
     public string Applicability { get; set; } = "present";
+    public RawValueDefinition? Raw { get; set; }
+}
+
+internal sealed class RawValueDefinition
+{
+    public double? Scale { get; set; }
+    public double Offset { get; set; }
+    public int Decimals { get; set; } = 1;
+    public List<RawBitDefinition> Bits { get; set; } = [];
+    public string? Zero { get; set; }
+}
+
+internal sealed class RawBitDefinition
+{
+    [JsonRequired] public int Mask { get; set; }
+    [JsonRequired] public string Set { get; set; } = "";
+    public string? Clear { get; set; }
 }
 
 internal sealed class DtcDefinition

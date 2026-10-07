@@ -4,6 +4,8 @@ namespace BitFab.KW1281Test.Blocks
 {
     internal class RawDataReadResponseBlock : Block
     {
+        internal GroupReadResponseWithTextBlock? MeasurementHeader { get; set; }
+
         public RawDataReadResponseBlock(List<byte> bytes) : base(bytes)
         {
         }

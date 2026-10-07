@@ -668,6 +668,8 @@ class Program
         {
             var availablePorts = SerialPort.GetPortNames();
             Log.WriteLine($"Unable to open port {portName}: {ex.Message}");
+            if (ex is UnauthorizedAccessException && OperatingSystem.IsLinux() && portName.StartsWith("/dev/", StringComparison.Ordinal))
+                foreach (string line in LinuxSerialPermissions.ForDevice(portName)) Log.WriteLine(line);
             Log.WriteLine(
                 availablePorts.Length > 0
                     ? $"Available ports: {string.Join(", ", availablePorts)}"

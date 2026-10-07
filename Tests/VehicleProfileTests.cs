@@ -156,7 +156,7 @@ public class VehicleProfileTests
         string formatted = DiagnosticFormatter.Group(unit, 5, block);
         Assert.IsTrue(formatted.Contains("RPM: 40 rpm"));
         Assert.IsTrue(formatted.Contains("Temperature:"));
-        Assert.IsTrue(formatted.Contains("Ignored [disregard]: 8"));
+        Assert.IsTrue(formatted.Contains("Ignored [disregarded]: 8"));
         Assert.IsTrue(formatted.Contains("(99 12 34)"));
         Assert.AreEqual("40 rpm | 10.0 °C | 8 | (99 12 34)", block.ToString());
     }
@@ -182,7 +182,7 @@ public class VehicleProfileTests
         var unit = VehicleProfile.Parse(Custom).FindUnit(1)!;
         var requests = new List<byte>();
         var output = new List<string>();
-        MeasurementReader.Sweep(unit.Select("engine,engine.rpm,custom"), group =>
+        MeasurementReader.Sweep(unit, unit.Select("engine,engine.rpm,custom"), group =>
         {
             requests.Add(group);
             return group == 5 ? Group(1, 10, 20, 5, 10, 110, 54, 0, 8) : new NakBlock([3, 0, 0x0A, 3]);
@@ -195,15 +195,15 @@ public class VehicleProfileTests
     }
 
     [TestMethod]
-    public void RawMeasurements_KeepBytesAndDoNotGuessNormalizedTextLayouts()
+    public void RawMeasurements_UseGroup000ScalesAndRejectUnexpectedLayouts()
     {
         var unit = VehicleProfile.Load("felicia-simos2p").FindUnit(1)!;
         var raw = new RawDataReadResponseBlock([13, 0, 0xF4, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 3]);
-        string pressure = DiagnosticFormatter.Measurement(unit.Select("intake.pressure").Single(), raw);
-        Assert.IsTrue(pressure.EndsWith("4 [raw]"));
-        Assert.IsTrue(DiagnosticFormatter.Group(unit, 0, raw).Contains("Battery voltage: 2 [raw]"));
-        Assert.IsTrue(DiagnosticFormatter.Measurement(unit.Select("engine.rpm").Single(), raw).Contains("unverified raw response layout"));
-        Assert.AreEqual(raw.ToString(), DiagnosticFormatter.Group(unit, 5, raw));
+        string pressure = DiagnosticFormatter.Measurement(unit, unit.Select("intake.pressure").Single(), raw);
+        Assert.IsTrue(pressure.EndsWith("2.0 kPa"));
+        Assert.IsTrue(DiagnosticFormatter.Group(unit, 0, raw).Contains("Battery voltage: 0.2 V"));
+        Assert.IsTrue(DiagnosticFormatter.Measurement(unit, unit.Select("engine.rpm").Single(), raw).Contains("returned 10 values, expected 4"));
+        Assert.IsTrue(DiagnosticFormatter.Group(unit, 5, raw).EndsWith(raw.ToString()));
     }
 
     [TestMethod]
@@ -234,7 +234,7 @@ public class VehicleProfileTests
         Assert.AreSame(raw, MeasurementReader.Read(0, requests.Add, () => raw));
         CollectionAssert.AreEqual(new byte[] { 0x12 }, requests.Single());
         requests.Clear();
-        MeasurementReader.Sweep(VehicleProfile.Parse(Custom).FindUnit(1)!.Select("all"), _ => throw new AssertFailedException(), _ => { }, () => true);
+        MeasurementReader.Sweep(VehicleProfile.Parse(Custom).FindUnit(1)!, VehicleProfile.Parse(Custom).FindUnit(1)!.Select("all"), _ => throw new AssertFailedException(), _ => { }, () => true);
     }
 
     private static GroupReadResponseBlock Group(params byte[] body) => new(new byte[] { (byte)(body.Length + 3), 0, 0xE7 }.Concat(body).Append((byte)3).ToList());
